@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelo de Dashboard - Gestão de Profissionais</title>
+    <style>
+        /* CSS - Estilização e Layout (Responsivo) */
+        :root {
+            --primary-color: #0056b3;
+            --primary-hover: #004085;
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #e0e0e0;
+            --status-habilitado: #28a745;
+            --status-desmobilizado: #dc3545;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Topo / Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+        }
+
+        .user-info {
+            font-size: 0.9rem;
+            text-align: right;
+        }
+
+        /* Seção de Filtros */
+        .filter-section {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        /* Botões de Status (Estilo Abas) */
+        .status-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            background-color: #e9ecef;
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active, .tab-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* Grid de Inputs */
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--primary-color);
+        }
+
+        /* Botões de Ação */
+        .actions-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .btn-search {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .btn-search:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* Tabela de Dados */
+        .table-container {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #555;
+        }
+
+        tr:hover {
+            background-color: #fdfdfd;
+        }
+
+        /* Badges de Status na Tabela */
+        .badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .badge.habilitado {
+            background-color: #d4edda;
+            color: var(--status-habilitado);
+        }
+
+        .badge.desmobilizado {
+            background-color: #f8d7da;
+            color: var(--status-desmobilizado);
+        }
+
+        .sub-text {
+            font-size: 0.75rem;
+            color: #777;
+            margin-top: 3px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Topo -->
+    <header>
+        <h1>Painel de Profissionais</h1>
+        <div class="user-info">
+            <strong>Daniel Vieira</strong><br>
+            <span style="font-size: 0.8rem; opacity: 0.9;">daniel.vieira@empresa.com</span>
+        </div>
+    </header>
+
+    <!-- Seção de Filtros -->
+    <section class="filter-section">
+        <!-- Abas de Status -->
+        <div class="status-tabs">
+            <button class="tab-btn active" onclick="filtrarStatus('Todos')">Todos</button>
+            <button class="tab-btn" onclick="filtrarStatus('Habilitado')">Habilitados</button>
+            <button class="tab-btn" onclick="filtrarStatus('Desmobilizado')">Desmobilizados</button>
+        </div>
+
+        <!-- Formulário de Filtros -->
+        <div class="filter-grid">
+            <div class="form-group">
+                <label for="search-input">Pesquisa de profissional</label>
+                <input type="text" id="search-input" placeholder="Digite o nome ou função...">
+            </div>
+            <div class="form-group">
+                <label for="select-atuacao">Tipo de atuação</label>
+                <select id="select-atuacao">
+                    <option value="">Todos</option>
+                    <option value="MTE">MTE</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="date-start">De</label>
+                <input type="date" id="date-start">
+            </div>
+            <div class="form-group">
+                <label for="date-end">Até</label>
+                <input type="date" id="date-end">
+            </div>
+        </div>
+
+        <div class="actions-row">
+            <button class="btn-search" onclick="aplicarFiltros()">Pesquisar</button>
+            <span id="counter" style="font-size: 0.9rem; color: #666;">Mostrando 0 profissionais</span>
+        </div>
+    </section>
+
+    <!-- Tabela de Resultados -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Profissional</th>
+                    <th>Tipo de atuação/Polo</th>
+                    <th>Status do Cadastro</th>
+                    <th>Última atualização</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <!-- Inserido dinamicamente via JS -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // JavaScript - Dados de Exemplo (Simulando uma API/Banco de Dados)
+    const profissionais = [
+        {
+            nome: "ABEL GEMAQUE NUNES",
+            cargo: "Sinaleiro Rigger",
+            empresa: "CONSTRUPERJ CONSTRUTORA LTDA",
+            atuacao: "MTE",
+            status: "Desmobilizado",
+            data: "2026-06-16"
+        },
+        {
+            nome: "ADRIANO MORAES DAS NEVES",
+            cargo: "Vigia",
+            empresa: "CONSTRUPERJ CONSTRUTORA LTDA",
+            atuacao: "MTE",
+            status: "Habilitado",
+            data: "2026-07-09"
+        },
+        {
+            nome: "ALEXANDRE DIEGO DA COSTA RODRIGUES",
+            cargo: "Ajudante Geral",
+            empresa: "CONSTRUPERJ CONSTRUTORA LTDA",
+            atuacao: "MTE",
+            status: "Habilitado",
+            data: "2026-04-14"
+        }
+    ];
+
+    let statusFiltroAtual = "Todos";
+
+    // Função para formatar data de YYYY-MM-DD para DD/MM/YYYY
+    function formatarData(dataStr) {
+        const partes = dataStr.split('-');
+        return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+
+    // Função para renderizar as linhas da tabela
+    function renderizarTabela(dados) {
+        const tbody = document.getElementById('table-body');
+        const counter = document.getElementById('counter');
+        tbody.innerHTML = '';
+
+        if (dados.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #999;">Nenhum profissional encontrado.</td></tr>`;
+            counter.innerText = `Mostrando 0 profissionais`;
+            return;
+        }
+
+        dados.forEach(p => {
+            const tr = document.createElement('tr');
+            
+            // Define a classe CSS do badge com base no status
+            const statusClass = p.status.toLowerCase() === 'habilitado' ? 'habilitado' : 'desmobilizado';
+
+            tr.innerHTML = `
+                <td>
+                    <strong>${p.nome}</strong>
+                    <div class="sub-text">${p.cargo}</div>
+                    <div class="sub-text" style="font-style: italic;">${p.empresa}</div>
+                </td>
+                <td>${p.atuacao}</td>
+                <td><span class="badge ${statusClass}">${p.status}</span></td>
+                <td>${formatarData(p.data)}</td>
+                <td><button style="padding: 4px 8px; font-size: 0.8rem; cursor: pointer;">Ficha</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        counter.innerText = `Mostrando ${dados.length} de${profissionais.length} profissionais`;
+    }
+
+    // Função acionada ao clicar nas abas de status
+    function filtrarStatus(status) {
+        statusFiltroAtual = status;
+        
+        // Atualiza estilo visual do botão ativo
+        const botoes = document.querySelectorAll('.tab-btn');
+        botoes.forEach(btn => {
+            if (btn.innerText === status || (status === 'Todos' && btn.innerText === 'Todos')) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        aplicarFiltros();
+    }
+
+    // Função principal de filtragem e busca
+    function aplicarFiltros() {
+        const termoBusca = document.getElementById('search-input').value.toLowerCase();
+        const atuacaoBusca = document.getElementById('select-atuacao').value;
+
+        const dadosFiltrados = profissionais.filter(p => {
+            // Filtro de Status (Abas)
+            const bateStatus = (statusFiltroAtual === "Todos") || (p.status === statusFiltroAtual);
+            
+            // Filtro de Texto (Nome ou Cargo)
+            const bateTexto = p.nome.toLowerCase().includes(termoBusca) || p.cargo.toLowerCase().includes(termoBusca);
+            
+            // Filtro de Atuação (Dropdown)
+            const bateAtuaca = (atuacaoBusca === "") || (p.atuacao === atuacaoBusca);
+
+            return bateStatus && bateTexto && bateAtuaca;
+        });
+
+        renderizarTabela(dadosFiltrados);
+    }
+
+    // Inicialização da página
+    window.onload = () => {
+        renderizarTabela(profissionais);
+    };
+</script>
+
+</body>
+</html>
