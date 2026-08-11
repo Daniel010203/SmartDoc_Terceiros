@@ -1,4 +1,4 @@
-# 📄 Sistema de Validação de Documentos de Empresas Parceiras
+# 📄 Sistema de Validação de Documentos de Empresas Parceiras - Em desenvolvimento.
 
 > Aplicação desenvolvida para automatizar o processo de validação e gerenciamento da documentação de empresas parceiras, proporcionando maior controle, conformidade e agilidade nos processos de homologação.
 
