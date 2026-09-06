@@ -1,0 +1,873 @@
+Vamos continuar com a parte central da especificação.
+
+# FASE 3 — REQUISITOS FUNCIONAIS
+
+## Sistema SaaS de Gestão e Validação Documental de Terceiros
+
+Os requisitos serão organizados por módulos e identificados para garantir **rastreabilidade** durante modelagem, desenvolvimento e testes.
+
+---
+
+# MÓDULO 1 — AUTENTICAÇÃO E CONTROLE DE ACESSO
+
+## RF-001 — Autenticar Usuário
+
+O sistema deverá permitir que usuários autenticados acessem a plataforma mediante credenciais válidas.
+
+**Atores:** Usuário Comum, Gestor e Administrador.
+
+### Funcionalidades
+
+* login;
+* logout;
+* recuperação de senha;
+* alteração de senha;
+* bloqueio de usuários inativos;
+* controle de sessão.
+
+---
+
+## RF-002 — Gerenciar Usuários
+
+O sistema deverá permitir ao Administrador gerenciar os usuários da plataforma.
+
+### Funcionalidades
+
+* cadastrar usuário;
+* editar usuário;
+* ativar usuário;
+* inativar usuário;
+* redefinir senha;
+* vincular usuário a uma empresa;
+* atribuir perfil de acesso.
+
+---
+
+## RF-003 — Gerenciar Perfis de Acesso
+
+O sistema deverá controlar permissões conforme o perfil do usuário.
+
+Perfis iniciais:
+
+```text
+USUARIO_COMUM
+
+GESTOR
+
+ADMINISTRADOR
+```
+
+O sistema deverá impedir que usuários executem operações não autorizadas.
+
+---
+
+# MÓDULO 2 — GESTÃO DE EMPRESAS
+
+## RF-004 — Gerenciar Empresas Clientes
+
+O sistema deverá permitir o cadastro e gerenciamento das empresas clientes.
+
+### Dados mínimos
+
+* razão social;
+* nome fantasia;
+* CNPJ;
+* endereço;
+* telefone;
+* e-mail;
+* responsável;
+* status.
+
+---
+
+## RF-005 — Gerenciar Empresas Terceirizadas
+
+O sistema deverá permitir o cadastro das empresas prestadoras de serviços.
+
+### Dados mínimos
+
+* razão social;
+* nome fantasia;
+* CNPJ;
+* inscrição estadual;
+* inscrição municipal;
+* endereço;
+* telefone;
+* e-mail;
+* responsável legal;
+* responsável pelo RH;
+* responsável por SST;
+* status da empresa.
+
+---
+
+## RF-006 — Vincular Empresa Terceirizada à Empresa Cliente
+
+O sistema deverá permitir que uma empresa terceira seja vinculada a uma ou mais empresas clientes.
+
+Relacionamento conceitual:
+
+```text
+EMPRESA CLIENTE
+      │
+      ├──────── EMPRESA TERCEIRA A
+      │
+      ├──────── EMPRESA TERCEIRA B
+      │
+      └──────── EMPRESA TERCEIRA C
+```
+
+A arquitetura deverá permitir evolução futura para múltiplos contratos e unidades.
+
+---
+
+# MÓDULO 3 — GESTÃO DE SERVIÇOS
+
+## RF-007 — Gerenciar Catálogo de Serviços
+
+O Administrador deverá poder cadastrar e gerenciar tipos de serviços.
+
+O sistema deverá possuir inicialmente um catálogo base contendo, entre outros:
+
+1. Limpeza de cisternas e reservatórios;
+2. Construção civil;
+3. Reformas prediais;
+4. Serviços de pintura;
+5. Serviços elétricos;
+6. Manutenção mecânica;
+7. Manutenção industrial;
+8. Serviços de Tecnologia da Informação;
+9. Instalação de redes;
+10. Manutenção de ar-condicionado;
+11. Limpeza e conservação;
+12. Jardinagem;
+13. Controle de pragas;
+14. Segurança patrimonial;
+15. Transporte de cargas;
+16. Operação de empilhadeiras;
+17. Operação de máquinas;
+18. Soldagem;
+19. Trabalho em altura;
+20. Trabalho em espaço confinado;
+21. Instalação de sistemas de incêndio;
+22. Manutenção hidráulica;
+23. Instalação de equipamentos;
+24. Montagem de estruturas metálicas;
+25. Serviços de telhado;
+26. Limpeza industrial;
+27. Gestão de resíduos;
+28. Terraplanagem;
+29. Escavação;
+30. Consultoria técnica.
+
+O catálogo deverá ser configurável.
+
+---
+
+## RF-008 — Registrar Prestação de Serviço
+
+O sistema deverá permitir registrar uma prestação de serviço entre empresa cliente e empresa terceirizada.
+
+### Informações
+
+* empresa cliente;
+* empresa terceirizada;
+* serviço;
+* descrição;
+* local/unidade;
+* data de início;
+* tipo de prazo;
+* data prevista de conclusão;
+* justificativa.
+
+Tipos de prazo:
+
+```text
+DETERMINADO
+
+INDETERMINADO
+```
+
+---
+
+## RF-009 — Controlar Prazo do Serviço
+
+Quando o prazo for determinado, o sistema deverá exigir:
+
+```text
+Data de início
+
+Data prevista de conclusão
+```
+
+Quando o prazo for indeterminado, o sistema deverá exigir:
+
+```text
+Data de início
+
+Justificativa obrigatória
+```
+
+---
+
+# MÓDULO 4 — GESTÃO DE ATIVIDADES
+
+## RF-010 — Registrar Atividades
+
+O sistema deverá permitir registrar uma ou mais atividades relacionadas a uma prestação de serviço.
+
+Exemplo:
+
+```text
+SERVIÇO
+
+Construção Civil
+
+ATIVIDADES
+
+- Trabalho em altura
+- Serviços elétricos
+- Escavação
+- Operação de máquinas
+```
+
+---
+
+## RF-011 — Gerenciar Catálogo de Atividades
+
+O Administrador deverá poder:
+
+* cadastrar atividades;
+* editar atividades;
+* ativar;
+* inativar;
+* associar atividades a serviços.
+
+---
+
+# MÓDULO 5 — DOCUMENTAÇÃO DA EMPRESA
+
+## RF-012 — Gerenciar Tipos de Documentos Empresariais
+
+O Administrador deverá configurar os tipos documentais exigidos.
+
+Categorias iniciais:
+
+### Documentação cadastral
+
+* Cartão CNPJ;
+* inscrição estadual;
+* inscrição municipal;
+* contrato social.
+
+### Documentação fiscal
+
+* certidões;
+* comprovantes de regularidade.
+
+### Documentação de SST
+
+* PGR;
+* PCMSO;
+* documentos complementares.
+
+Cada tipo documental deverá possuir configurações.
+
+```text
+Nome
+
+Categoria
+
+Obrigatório?
+
+Possui validade?
+
+Data início obrigatória?
+
+Data validade obrigatória?
+
+Dias de alerta?
+
+Ativo?
+```
+
+---
+
+## RF-013 — Enviar Documentos da Empresa
+
+O Usuário Comum deverá poder enviar documentos empresariais.
+
+Formato inicial permitido:
+
+```text
+PDF
+```
+
+O sistema deverá registrar:
+
+* arquivo;
+* tipo de documento;
+* data de envio;
+* usuário responsável;
+* status.
+
+Quando aplicável:
+
+* data de início;
+* data de validade.
+
+---
+
+## RF-014 — Enviar PGR
+
+O sistema deverá permitir o envio do **Programa de Gerenciamento de Riscos — PGR** em formato PDF.
+
+O PGR deverá ser vinculado à empresa terceirizada.
+
+O sistema deverá permitir controlar versões futuras do documento.
+
+---
+
+## RF-015 — Enviar PCMSO
+
+O sistema deverá permitir o envio do **Programa de Controle Médico de Saúde Ocupacional — PCMSO** em formato PDF.
+
+O documento deverá ser vinculado à empresa terceirizada.
+
+O sistema deverá permitir histórico e substituição futura de versões.
+
+---
+
+# MÓDULO 6 — GESTÃO DE TRABALHADORES
+
+## RF-016 — Cadastrar Trabalhadores
+
+O sistema deverá permitir o cadastro de trabalhadores vinculados a empresas terceirizadas.
+
+### Dados iniciais
+
+* nome completo;
+* CPF;
+* matrícula, quando aplicável;
+* função;
+* data de admissão;
+* empresa terceirizada;
+* status.
+
+---
+
+## RF-017 — Vincular Trabalhador ao Serviço
+
+O sistema deverá permitir vincular um trabalhador a uma prestação de serviço.
+
+Um trabalhador poderá atuar em diferentes serviços, respeitando as regras de negócio.
+
+---
+
+## RF-018 — Vincular Trabalhador às Atividades
+
+O sistema deverá permitir associar uma ou mais atividades ao trabalhador.
+
+Exemplo:
+
+```text
+TRABALHADOR
+
+João da Silva
+
+ATIVIDADES
+
+✓ Trabalho em altura
+
+✓ Manutenção elétrica
+```
+
+Esse vínculo será importante para futuras validações automáticas.
+
+---
+
+## RF-019 — Atualizar Quadro de Trabalhadores
+
+O sistema deverá solicitar periodicamente a atualização do quadro de trabalhadores.
+
+Periodicidade inicial:
+
+```text
+15 DIAS
+```
+
+A empresa deverá informar:
+
+```text
+SEM ALTERAÇÕES
+
+OU
+
+ATUALIZAR QUADRO
+```
+
+---
+
+## RF-020 — Registrar Confirmação do Quadro
+
+O sistema deverá registrar:
+
+* empresa responsável;
+* data da solicitação;
+* data da confirmação;
+* usuário responsável;
+* situação informada.
+
+Histórico sugerido:
+
+```text
+CONFIRMADO SEM ALTERAÇÃO
+
+CONFIRMADO COM ALTERAÇÃO
+
+PENDENTE
+```
+
+---
+
+# MÓDULO 7 — DOCUMENTAÇÃO DOS TRABALHADORES
+
+## RF-021 — Gerenciar Tipos Documentais de Trabalhadores
+
+O Administrador deverá configurar os documentos exigidos.
+
+Categorias iniciais:
+
+```text
+TRABALHISTA
+
+SEGURANÇA DO TRABALHO
+
+TREINAMENTO
+
+SAÚDE OCUPACIONAL
+
+OUTROS
+```
+
+Exemplos:
+
+* documento trabalhista;
+* ASO;
+* certificado de treinamento;
+* ficha de EPI;
+* comprovante de integração;
+* ordem de serviço.
+
+---
+
+## RF-022 — Enviar Documento do Trabalhador
+
+O sistema deverá permitir o envio de documentos em formato PDF.
+
+Para cada documento deverão ser informados:
+
+```text
+Tipo
+
+Arquivo PDF
+
+Data de início
+
+Data de validade
+
+Observação
+```
+
+Quando configurado, o sistema deverá exigir obrigatoriamente as datas.
+
+---
+
+## RF-023 — Substituir Documento
+
+O sistema deverá permitir substituir documentos vencidos ou reprovados.
+
+A substituição não deverá apagar o histórico anterior.
+
+O sistema deverá manter:
+
+```text
+VERSÃO 1
+
+VERSÃO 2
+
+VERSÃO 3
+```
+
+---
+
+## RF-024 — Consultar Situação Documental
+
+O sistema deverá apresentar a situação documental consolidada do trabalhador.
+
+Exemplo:
+
+| Documento    | Situação |
+| ------------ | -------- |
+| ASO          | Válido   |
+| Treinamento  | Válido   |
+| Ficha de EPI | Pendente |
+| Integração   | Válido   |
+
+Status geral:
+
+```text
+REGULAR
+
+PENDENTE
+
+IRREGULAR
+```
+
+---
+
+# MÓDULO 8 — VALIDAÇÃO DOCUMENTAL
+
+Este é um dos módulos centrais do sistema.
+
+## RF-025 — Solicitar Validação
+
+O Usuário Comum deverá poder solicitar a validação da documentação enviada.
+
+A solicitação deverá gerar um registro contendo:
+
+* solicitante;
+* data;
+* trabalhador ou empresa;
+* documentos envolvidos;
+* status.
+
+---
+
+## RF-026 — Realizar Validação Humana
+
+O Gestor deverá poder analisar documentos enviados.
+
+Ações:
+
+```text
+APROVAR
+
+REPROVAR
+
+SOLICITAR CORREÇÃO
+```
+
+---
+
+## RF-027 — Registrar Motivo da Reprovação
+
+Ao reprovar um documento, o Gestor deverá informar uma justificativa.
+
+Exemplo:
+
+```text
+Documento ilegível.
+
+Documento vencido.
+
+Documento incompatível.
+
+Informações incompletas.
+```
+
+O motivo deverá permanecer registrado no histórico.
+
+---
+
+## RF-028 — Validação Automática de Datas
+
+O sistema deverá verificar automaticamente:
+
+* existência de data de validade;
+* documento vencido;
+* documento próximo do vencimento.
+
+Status:
+
+```text
+VALIDO
+
+PROXIMO_DO_VENCIMENTO
+
+VENCIDO
+```
+
+---
+
+## RF-029 — Validação Automática de Requisitos
+
+O sistema deverá possuir uma estrutura preparada para validar automaticamente se os documentos obrigatórios foram enviados.
+
+Exemplo conceitual:
+
+```text
+ATIVIDADE
+      │
+      ▼
+REQUISITO
+      │
+      ▼
+DOCUMENTO EXIGIDO
+      │
+      ▼
+DOCUMENTO ENVIADO?
+      │
+ ┌────┴────┐
+ NÃO       SIM
+ │          │
+ ▼          ▼
+PENDENTE  VALIDAR
+```
+
+Esta funcionalidade poderá ser implementada gradualmente no MVP.
+
+---
+
+# MÓDULO 9 — ALERTAS E VENCIMENTOS
+
+## RF-030 — Monitorar Vencimentos
+
+O sistema deverá monitorar diariamente os documentos com prazo de validade.
+
+---
+
+## RF-031 — Gerar Alertas Preventivos
+
+Inicialmente, o sistema deverá gerar alertas quando faltarem:
+
+```text
+30 DIAS
+
+15 DIAS
+
+7 DIAS
+```
+
+para o vencimento.
+
+---
+
+## RF-032 — Identificar Documentos Vencidos
+
+Documentos com validade inferior à data atual deverão receber automaticamente o status:
+
+```text
+VENCIDO
+```
+
+---
+
+## RF-033 — Notificar Usuários
+
+O sistema deverá permitir a notificação de usuários responsáveis.
+
+Inicialmente:
+
+```text
+Notificação no Dashboard
+
+E-mail
+```
+
+A integração com outros canais poderá ocorrer futuramente.
+
+---
+
+# MÓDULO 10 — DASHBOARD
+
+## RF-034 — Dashboard do Usuário Comum
+
+O dashboard deverá apresentar:
+
+* documentos pendentes;
+* documentos próximos do vencimento;
+* documentos reprovados;
+* solicitações de atualização do quadro;
+* status das validações.
+
+---
+
+## RF-035 — Dashboard do Gestor
+
+O Gestor deverá visualizar:
+
+* quantidade de empresas terceirizadas;
+* trabalhadores cadastrados;
+* documentos pendentes;
+* documentos vencidos;
+* documentos próximos do vencimento;
+* solicitações aguardando validação.
+
+---
+
+## RF-036 — Dashboard Administrativo
+
+O Administrador deverá possuir visão global da plataforma.
+
+Indicadores iniciais:
+
+```text
+Empresas Clientes
+
+Empresas Terceirizadas
+
+Usuários
+
+Trabalhadores
+
+Documentos Pendentes
+
+Documentos Vencidos
+
+Documentos Próximos do Vencimento
+```
+
+---
+
+# MÓDULO 11 — AUDITORIA
+
+## RF-037 — Registrar Auditoria
+
+O sistema deverá registrar ações relevantes.
+
+Exemplos:
+
+```text
+LOGIN
+
+LOGOUT
+
+UPLOAD_DOCUMENTO
+
+APROVACAO
+
+REPROVACAO
+
+ALTERACAO
+
+EXCLUSAO_LOGICA
+```
+
+---
+
+## RF-038 — Consultar Histórico
+
+O Administrador deverá poder consultar o histórico das ações realizadas.
+
+Informações:
+
+* usuário;
+* ação;
+* data;
+* horário;
+* entidade;
+* identificação do registro.
+
+---
+
+# MÓDULO 12 — RELATÓRIOS
+
+## RF-039 — Relatório de Conformidade
+
+O sistema deverá gerar relatório contendo:
+
+* empresa;
+* quantidade de trabalhadores;
+* documentos válidos;
+* documentos pendentes;
+* documentos vencidos;
+* percentual de conformidade.
+
+---
+
+## RF-040 — Relatório de Vencimentos
+
+O sistema deverá permitir consultar documentos:
+
+```text
+VENCIDOS
+
+A VENCER EM 30 DIAS
+
+A VENCER EM 15 DIAS
+
+A VENCER EM 7 DIAS
+```
+
+---
+
+# Resumo dos Requisitos Funcionais
+
+Neste momento temos **40 requisitos funcionais iniciais**.
+
+| Módulo                   |             RFs |
+| ------------------------ | --------------: |
+| Autenticação             | RF-001 a RF-003 |
+| Empresas                 | RF-004 a RF-006 |
+| Serviços                 | RF-007 a RF-009 |
+| Atividades               | RF-010 a RF-011 |
+| Documentos Empresariais  | RF-012 a RF-015 |
+| Trabalhadores            | RF-016 a RF-020 |
+| Documentos Trabalhadores | RF-021 a RF-024 |
+| Validação                | RF-025 a RF-029 |
+| Alertas                  | RF-030 a RF-033 |
+| Dashboard                | RF-034 a RF-036 |
+| Auditoria                | RF-037 a RF-038 |
+| Relatórios               | RF-039 a RF-040 |
+
+---
+
+# Ponto arquitetural importante
+
+Os requisitos já começam a mostrar claramente as principais entidades do domínio:
+
+```text
+USUÁRIO
+PERFIL
+
+EMPRESA CLIENTE
+EMPRESA TERCEIRIZADA
+
+SERVIÇO
+ATIVIDADE
+
+TRABALHADOR
+
+TIPO DOCUMENTO
+DOCUMENTO
+
+VALIDAÇÃO
+
+ALERTA
+
+ATUALIZAÇÃO QUADRO
+
+AUDITORIA
+```
+
+Mas **ainda não devemos criar o banco**.
+
+O próximo passo correto é estabelecer a **FASE 4 — Requisitos Não Funcionais e Regras de Negócio**, porque essas regras influenciarão diretamente a modelagem das entidades, relacionamentos, constraints e permissões.
+
+Na próxima etapa vamos formalizar itens como:
+
+* segurança;
+* LGPD;
+* privacidade dos documentos;
+* PDFs privados;
+* integridade;
+* rastreabilidade;
+* desempenho;
+* disponibilidade;
+* retenção de documentos;
+* regras de vencimento;
+* regras de aprovação;
+* regras da atualização de funcionários;
+* regras de exclusão;
+* versionamento documental.
