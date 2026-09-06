@@ -1,0 +1,551 @@
+Vamos retomar exatamente do ponto em que paramos.
+
+# FASE 1 — ENGENHARIA DE SOFTWARE
+
+## Documento de Visão do Produto
+
+Antes de criar banco de dados, telas ou código Django, vamos formalizar a visão do sistema. Este documento servirá como referência para todas as próximas etapas.
+
+---
+
+# 1. Identificação do Projeto
+
+### Nome provisório
+
+**SmartDoc Terceiros**
+
+Podemos alterar futuramente, inclusive pensando em uma marca comercial.
+
+### Descrição
+
+Sistema SaaS Web para **gestão, controle e validação documental de empresas terceirizadas e seus trabalhadores**, permitindo que empresas clientes controlem a regularidade documental necessária para prestação de serviços em suas instalações.
+
+---
+
+# 2. Problema de Negócio
+
+Empresas que contratam prestadores de serviços terceirizados frequentemente enfrentam dificuldades para controlar documentos relacionados a:
+
+* regularidade da empresa contratada;
+* documentação fiscal;
+* documentação trabalhista;
+* documentação de Segurança e Saúde no Trabalho;
+* Programas de Gerenciamento de Riscos;
+* Programas de Controle Médico de Saúde Ocupacional;
+* certificados de treinamentos;
+* exames ocupacionais;
+* vencimentos documentais;
+* atualização do quadro de trabalhadores.
+
+Normalmente esse controle é realizado utilizando:
+
+```text
+Planilhas
++
+E-mails
++
+Pastas compartilhadas
++
+PDFs dispersos
++
+Controle manual
+```
+
+Esse modelo gera problemas como:
+
+* documentos vencidos;
+* ausência de rastreabilidade;
+* dificuldade de identificar pendências;
+* demora na validação;
+* liberação inadequada de trabalhadores;
+* risco operacional;
+* dificuldade em auditorias;
+* falta de atualização do quadro de funcionários;
+* dependência excessiva de controles manuais.
+
+---
+
+# 3. Proposta de Solução
+
+O **SmartDoc Terceiros** será uma plataforma SaaS centralizada para receber, armazenar, controlar e validar documentos de empresas terceirizadas e seus trabalhadores.
+
+A solução permitirá o fluxo:
+
+```text
+EMPRESA CLIENTE
+       │
+       ▼
+EMPRESA TERCEIRIZADA
+       │
+       ├── Dados cadastrais
+       │
+       ├── Documentos empresariais
+       │
+       ├── PGR
+       │
+       ├── PCMSO
+       │
+       ▼
+SERVIÇO CONTRATADO
+       │
+       ▼
+ATIVIDADES EXECUTADAS
+       │
+       ▼
+TRABALHADORES
+       │
+       ▼
+DOCUMENTOS
+       │
+       ▼
+VALIDAÇÃO
+       │
+       ├── Automática
+       │
+       └── Humana
+       │
+       ▼
+STATUS DE CONFORMIDADE
+```
+
+---
+
+# 4. Objetivo Geral
+
+Desenvolver uma plataforma SaaS Web capaz de centralizar e automatizar o processo de **gestão e validação documental de empresas terceirizadas e seus trabalhadores**, garantindo maior controle sobre requisitos documentais, prazos de validade e pendências relacionadas à prestação de serviços.
+
+---
+
+# 5. Objetivos Específicos
+
+O sistema deverá:
+
+* cadastrar empresas clientes;
+* cadastrar empresas terceirizadas;
+* registrar os serviços contratados;
+* registrar as atividades que serão executadas;
+* controlar o prazo de execução dos serviços;
+* permitir serviços com prazo determinado ou indeterminado;
+* exigir justificativa para serviços indeterminados;
+* receber documentos empresariais em PDF;
+* receber PGR em PDF;
+* receber PCMSO em PDF;
+* cadastrar trabalhadores terceirizados;
+* receber documentos trabalhistas;
+* receber documentos de SST;
+* registrar datas de início e validade dos documentos;
+* controlar documentos vencidos;
+* alertar documentos próximos do vencimento;
+* solicitar atualização do quadro de trabalhadores a cada 15 dias;
+* permitir validação humana dos documentos;
+* implementar validações automáticas baseadas em regras;
+* controlar status documental;
+* manter histórico das validações;
+* registrar ações dos usuários para auditoria.
+
+---
+
+# 6. Público-Alvo
+
+O sistema será direcionado inicialmente para organizações que possuem grande circulação de empresas terceirizadas.
+
+Exemplos:
+
+* indústrias;
+* empresas de construção civil;
+* empresas de mineração;
+* empresas de energia;
+* hospitais;
+* centros logísticos;
+* condomínios empresariais;
+* empresas de facilities;
+* empresas do setor químico;
+* empresas de petróleo e gás;
+* grandes centros comerciais.
+
+Também poderá ser utilizado por empresas especializadas em:
+
+> Gestão documental de terceiros e conformidade de SST.
+
+---
+
+# 7. Principais Usuários
+
+Inicialmente teremos três perfis.
+
+## Usuário Comum
+
+Representante da empresa terceira responsável por:
+
+* cadastrar informações;
+* cadastrar trabalhadores;
+* enviar documentos;
+* atualizar documentos;
+* consultar pendências;
+* solicitar validação;
+* confirmar atualização do quadro de funcionários.
+
+### Restrição
+
+Não poderá validar ou aprovar seus próprios documentos.
+
+---
+
+## Gestor
+
+Representante da empresa cliente responsável por:
+
+* analisar documentos;
+* aprovar documentos;
+* reprovar documentos;
+* solicitar correções;
+* acompanhar vencimentos;
+* acompanhar empresas terceirizadas;
+* consultar trabalhadores;
+* visualizar indicadores.
+
+---
+
+## Administrador
+
+Responsável pela administração completa do sistema.
+
+Poderá:
+
+* gerenciar usuários;
+* configurar permissões;
+* configurar tipos documentais;
+* cadastrar serviços;
+* cadastrar atividades;
+* configurar requisitos;
+* configurar regras;
+* acompanhar auditorias;
+* acessar relatórios gerais.
+
+---
+
+# 8. Escopo Inicial do MVP
+
+Para evitar que o projeto fique excessivamente complexo, definiremos claramente o que será desenvolvido na primeira versão.
+
+## Incluído no MVP
+
+### Gestão de usuários
+
+```text
+Cadastro
+Login
+Logout
+Recuperação de senha
+Perfis
+Permissões
+```
+
+### Gestão de empresas
+
+```text
+Empresa Cliente
+Empresa Terceira
+Dados cadastrais
+Responsáveis
+Status
+```
+
+### Gestão de serviços
+
+```text
+Tipo de serviço
+Atividades
+Data início
+Data prevista término
+
+OU
+
+Prazo indeterminado
++
+Justificativa obrigatória
+```
+
+### Gestão documental empresarial
+
+```text
+Upload PDF
+
+Documentos empresariais
+
+PGR
+
+PCMSO
+```
+
+### Gestão de trabalhadores
+
+```text
+Cadastro
+Função
+Empresa
+Serviço
+Atividades
+Status
+```
+
+### Gestão documental do trabalhador
+
+```text
+Documento PDF
+Categoria
+Data início
+Data validade
+Status
+```
+
+### Validação
+
+```text
+Pendente
+
+Em análise
+
+Aprovado
+
+Reprovado
+
+Vencido
+```
+
+### Alertas
+
+```text
+30 dias antes
+
+15 dias antes
+
+7 dias antes
+
+Documento vencido
+```
+
+### Atualização do quadro
+
+```text
+Solicitação automática
+
+A cada 15 dias
+
+Confirmação
+
+Histórico
+```
+
+### Auditoria
+
+Registro de:
+
+```text
+Quem realizou
+Qual ação
+Quando
+Qual registro foi alterado
+```
+
+---
+
+# 9. Fora do Escopo Inicial
+
+É importante definir o que **não desenvolveremos agora**.
+
+Essas funcionalidades poderão existir futuramente.
+
+```text
+OCR avançado
+
+Inteligência Artificial
+
+Leitura automática completa de PGR
+
+Leitura automática completa de PCMSO
+
+Integração com eSocial
+
+Integração Receita Federal
+
+Integração com catracas
+
+RFID
+
+Biometria
+
+Aplicativo Mobile
+
+WhatsApp
+
+Machine Learning
+
+Microserviços
+
+Data Warehouse
+```
+
+Isso não significa abandonar essas ideias.
+
+Significa apenas:
+
+> **Primeiro construiremos um núcleo funcional e sólido.**
+
+---
+
+# 10. Diferencial Estratégico do Sistema
+
+O sistema não será apenas um repositório de PDFs.
+
+O diferencial será a capacidade de relacionar:
+
+```text
+EMPRESA
+    │
+    ▼
+SERVIÇO
+    │
+    ▼
+ATIVIDADES
+    │
+    ▼
+REQUISITOS
+    │
+    ▼
+TRABALHADORES
+    │
+    ▼
+DOCUMENTOS
+    │
+    ▼
+VALIDAÇÃO
+    │
+    ▼
+CONFORMIDADE
+```
+
+Essa estrutura permitirá, futuramente, evoluir para um verdadeiro **motor de conformidade documental**.
+
+---
+
+# 11. Fluxo Macro do Sistema
+
+```text
+┌──────────────────────┐
+│ EMPRESA TERCEIRIZADA │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ CADASTRO DA EMPRESA  │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ CADASTRO DO SERVIÇO  │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ UPLOAD PGR / PCMSO   │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ CADASTRO ATIVIDADES  │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ CADASTRO TRABALHADOR │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ ENVIO DOCUMENTOS     │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ VALIDAÇÃO            │
+│ AUTOMÁTICA / HUMANA  │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ STATUS CONFORMIDADE  │
+└──────────────────────┘
+```
+
+---
+
+# 12. Visão Tecnológica Consolidada
+
+A stack oficial do MVP será:
+
+| Camada         | Tecnologia                         |
+| -------------- | ---------------------------------- |
+| Linguagem      | Python                             |
+| Framework      | Django                             |
+| Banco de Dados | PostgreSQL                         |
+| ORM            | Django ORM                         |
+| Front-end      | Django Templates                   |
+| Templates      | Jinja/Django Templates             |
+| CSS            | Bootstrap                          |
+| Autenticação   | Django Auth                        |
+| Permissões     | Groups + Permissions               |
+| Upload         | Django FileField                   |
+| Arquivos       | Storage privado local inicialmente |
+| Agendamentos   | Django Management Commands         |
+| E-mails        | Django Email Backend               |
+| Versionamento  | Git + GitHub                       |
+
+### Arquitetura
+
+```text
+MONÓLITO MODULAR
+```
+
+Essa escolha é adequada para o estágio atual do produto.
+
+---
+
+# Decisão importante para a próxima fase
+
+Com o Documento de Visão consolidado, considero a **FASE 1 concluída conceitualmente**.
+
+A próxima etapa será:
+
+# FASE 2 — STAKEHOLDERS, ATORES E PERSONAS
+
+Nela vamos identificar formalmente:
+
+1. quem possui interesse no sistema;
+2. quem utiliza o sistema;
+3. quais são os atores externos;
+4. responsabilidades de cada ator;
+5. permissões;
+6. jornadas principais de utilização.
+
+Depois disso entraremos nos **Requisitos Funcionais**, onde começaremos a transformar toda essa visão em funcionalidades numeradas e rastreáveis, por exemplo:
+
+```text
+RF-001 — Gerenciar Usuários
+
+RF-002 — Gerenciar Empresas Clientes
+
+RF-003 — Gerenciar Empresas Terceirizadas
+
+RF-004 — Gerenciar Serviços
+
+RF-005 — Gerenciar Trabalhadores
+
+RF-006 — Gerenciar Documentos
+
+RF-007 — Validar Documentos
+
+RF-008 — Controlar Validades
+```
+
+Esse será o próximo passo.
