@@ -1,0 +1,692 @@
+Vamos avançar para a **FASE 10 — Arquitetura do Projeto Django**.
+
+Aqui vamos sair do modelo de banco e definir a estrutura real do software. A preocupação principal nesta fase será deixar o projeto preparado para **SaaS multiempresa**, sem introduzir complexidade desnecessária no MVP.
+
+# FASE 10 — ARQUITETURA DJANGO
+
+## 10.1 Stack definida
+
+Para o SmartDoc Terceiros:
+
+| Camada             | Tecnologia                                     |
+| ------------------ | ---------------------------------------------- |
+| Backend            | **Python + Django**                            |
+| Banco              | **PostgreSQL**                                 |
+| Front-end inicial  | **Django Templates + HTML + CSS + JavaScript** |
+| Autenticação       | Django Auth                                    |
+| Usuário            | Custom User / `AbstractUser`                   |
+| ORM                | Django ORM                                     |
+| API futura         | Django REST Framework                          |
+| Arquivos           | Django Storage                                 |
+| Desenvolvimento    | `MEDIA_ROOT` local                             |
+| Produção           | Object Storage                                 |
+| Controle de versão | Git + GitHub                                   |
+| Configuração       | `.env`                                         |
+| Testes             | Django Test Framework / Pytest posteriormente  |
+
+Não vamos introduzir React, Vue, Docker, Redis, Celery etc. no primeiro momento. Eles podem entrar quando houver uma necessidade concreta.
+
+---
+
+# 10.2 Estrutura do projeto
+
+A estrutura proposta será:
+
+```text
+smartdoc_terceiros/
+│
+├── config/
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   ├── asgi.py
+│   └── wsgi.py
+│
+├── accounts/
+│   ├── migrations/
+│   ├── admin.py
+│   ├── apps.py
+│   ├── models.py
+│   ├── permissions.py
+│   ├── urls.py
+│   ├── views.py
+│   └── tests.py
+│
+├── empresas/
+│   ├── migrations/
+│   ├── admin.py
+│   ├── apps.py
+│   ├── models.py
+│   ├── urls.py
+│   ├── views.py
+│   └── tests.py
+│
+├── servicos/
+│   ├── migrations/
+│   ├── admin.py
+│   ├── apps.py
+│   ├── models.py
+│   ├── urls.py
+│   ├── views.py
+│   └── tests.py
+│
+├── trabalhadores/
+│   ├── migrations/
+│   ├── admin.py
+│   ├── apps.py
+│   ├── models.py
+│   ├── urls.py
+│   ├── views.py
+│   └── tests.py
+│
+├── documentos/
+│   ├── migrations/
+│   ├── admin.py
+│   ├── apps.py
+│   ├── models.py
+│   ├── services.py
+│   ├── urls.py
+│   ├── views.py
+│   └── tests.py
+│
+├── conformidade/
+│   ├── migrations/
+│   ├── admin.py
+│   ├── apps.py
+│   ├── models.py
+│   ├── services.py
+│   ├── urls.py
+│   ├── views.py
+│   └── tests.py
+│
+├── notificacoes/
+│   ├── migrations/
+│   ├── apps.py
+│   ├── models.py
+│   ├── services.py
+│   └── tests.py
+│
+├── auditoria/
+│   ├── migrations/
+│   ├── apps.py
+│   ├── models.py
+│   ├── services.py
+│   └── tests.py
+│
+├── templates/
+│   ├── base.html
+│   ├── accounts/
+│   ├── empresas/
+│   ├── servicos/
+│   ├── trabalhadores/
+│   ├── documentos/
+│   ├── conformidade/
+│   └── dashboard/
+│
+├── static/
+│   ├── css/
+│   ├── js/
+│   └── images/
+│
+├── media/
+│
+├── .env
+├── .env.example
+├── .gitignore
+├── manage.py
+├── requirements.txt
+└── README.md
+```
+
+---
+
+# 10.3 Responsabilidade de cada App
+
+Não vamos criar Apps aleatoriamente. Cada um terá uma responsabilidade clara.
+
+### `accounts`
+
+Responsável por:
+
+* usuários;
+* perfis;
+* autenticação;
+* autorização;
+* permissões.
+
+```text
+ADMINISTRADOR
+GESTOR
+USUARIO_COMUM
+```
+
+---
+
+### `empresas`
+
+Responsável por:
+
+* empresas clientes;
+* empresas terceirizadas;
+* unidades.
+
+---
+
+### `servicos`
+
+Responsável por:
+
+* segmentos;
+* tipos de serviço;
+* prestações de serviço;
+* atividades;
+* relacionamento entre prestação e atividade.
+
+Aqui entra nossa decisão:
+
+```text
+SEGMENTO
+   ↓
+TIPO DE SERVIÇO
+   ↓
+PRESTAÇÃO DE SERVIÇO
+   ↓
+ATIVIDADES
+```
+
+---
+
+### `trabalhadores`
+
+Responsável por:
+
+* cadastro dos trabalhadores;
+* alocação em prestações;
+* atividades executadas.
+
+---
+
+### `documentos`
+
+Responsável por:
+
+* tipos de documentos;
+* upload;
+* armazenamento;
+* versões;
+* validade;
+* status;
+* validação documental.
+
+---
+
+### `conformidade`
+
+Será o núcleo inteligente do sistema.
+
+Inicialmente:
+
+```text
+ATIVIDADE
+   ↓
+REQUISITO
+   ↓
+DOCUMENTO NECESSÁRIO
+   ↓
+DOCUMENTO ENVIADO
+   ↓
+VALIDAÇÃO
+   ↓
+STATUS
+```
+
+Posteriormente poderá incorporar:
+
+```text
+RISCO
+PGR
+PCMSO
+OCR
+IA
+```
+
+---
+
+### `notificacoes`
+
+Responsável por:
+
+* vencimentos;
+* alertas;
+* atualização do quadro;
+* notificações futuras.
+
+---
+
+### `auditoria`
+
+Responsável por registrar as operações relevantes realizadas pelos usuários.
+
+---
+
+# 10.4 Uma decisão arquitetural importante: Tenant
+
+Como o SmartDoc será SaaS, precisamos pensar desde já em **isolamento de dados**.
+
+Imagine:
+
+```text
+SMARTDOC
+│
+├── Cliente A
+│   ├── Terceirizada X
+│   ├── Terceirizada Y
+│   └── Trabalhadores
+│
+├── Cliente B
+│   ├── Terceirizada Z
+│   └── Trabalhadores
+│
+└── Cliente C
+    ├── Terceirizada W
+    └── Trabalhadores
+```
+
+O Cliente A **jamais poderá enxergar os dados do Cliente B**.
+
+### No MVP
+
+Podemos utilizar `empresa_cliente_id` nas relações de prestação e aplicar o isolamento através das regras de acesso do Django.
+
+Por exemplo:
+
+```text
+request.user.empresa_id
+        ↓
+identifica empresa do usuário
+        ↓
+filtra registros permitidos
+        ↓
+retorna somente dados daquela empresa
+```
+
+Isso é simples e adequado para começarmos.
+
+### Mas existe uma evolução importante
+
+Antes de colocar o sistema em produção comercial, podemos evoluir para uma estrutura explícita de:
+
+```text
+TENANT
+   ↓
+USUÁRIOS
+   ↓
+DADOS DO TENANT
+```
+
+Essa decisão será revisada antes da implantação definitiva do SaaS.
+
+---
+
+# 10.5 Controle de acesso
+
+Não devemos depender apenas de esconder botões na interface.
+
+A segurança deverá existir em três níveis:
+
+```text
+Interface
+    ↓
+View
+    ↓
+Regra de autorização
+    ↓
+Banco de dados
+```
+
+Exemplo:
+
+### Administrador
+
+Pode:
+
+```text
+✓ cadastrar segmento
+✓ editar segmento
+✓ desativar segmento
+✓ cadastrar tipo de serviço
+✓ cadastrar atividade
+✓ cadastrar tipo de documento
+✓ configurar requisitos
+✓ administrar usuários
+```
+
+### Gestor
+
+Pode:
+
+```text
+✓ cadastrar/gerenciar terceirizadas
+✓ acompanhar prestações
+✓ visualizar trabalhadores
+✓ analisar documentos
+✓ aprovar documentos
+✓ reprovar documentos
+✓ acompanhar conformidade
+✓ acompanhar vencimentos
+```
+
+Não pode:
+
+```text
+✗ administrar catálogo global
+✗ alterar configurações críticas do sistema
+```
+
+### Usuário Comum
+
+Pode:
+
+```text
+✓ cadastrar/enviar documentos
+✓ cadastrar trabalhadores conforme sua permissão
+✓ acompanhar documentos enviados
+✓ solicitar validação
+```
+
+Não pode:
+
+```text
+✗ aprovar seus próprios documentos
+✗ alterar regras de conformidade
+✗ administrar usuários
+✗ administrar catálogo
+```
+
+---
+
+# 10.6 Fluxo de autenticação
+
+Inicialmente:
+
+```text
+                    LOGIN
+                      │
+                      ▼
+                 Django Auth
+                      │
+                      ▼
+                  USUÁRIO
+                      │
+             ┌────────┼────────┐
+             ▼        ▼        ▼
+          ADMIN     GESTOR   COMUM
+             │        │        │
+             ▼        ▼        ▼
+       Administração Gestão  Operação
+```
+
+A autenticação ficará centralizada no Django.
+
+As senhas serão armazenadas utilizando o mecanismo de hashing do próprio Django.
+
+---
+
+# 10.7 Custom User
+
+Não vamos utilizar o `User` padrão sem planejamento.
+
+Teremos algo conceitualmente próximo de:
+
+```python
+class Usuario(AbstractUser):
+    id = UUIDField(...)
+    nome = ...
+    email = ...
+    perfil = ForeignKey(...)
+    empresa = ForeignKey(...)
+    ultimo_acesso = ...
+```
+
+Isso permitirá evoluir o usuário posteriormente sem precisar substituir o sistema de autenticação.
+
+---
+
+# 10.8 Configurações
+
+O `settings.py` não deverá conter senhas ou informações sensíveis.
+
+Usaremos:
+
+```text
+.env
+```
+
+Exemplo:
+
+```text
+SECRET_KEY=...
+DEBUG=True
+
+DB_NAME=smartdoc
+DB_USER=...
+DB_PASSWORD=...
+DB_HOST=localhost
+DB_PORT=5432
+```
+
+E:
+
+```text
+.env.example
+```
+
+sem credenciais reais.
+
+O `.env` ficará no:
+
+```text
+.gitignore
+```
+
+---
+
+# 10.9 Fluxo de documentos
+
+A arquitetura do upload será:
+
+```text
+Usuário
+   │
+   ▼
+Upload PDF
+   │
+   ▼
+Django
+   │
+   ├── verifica extensão
+   ├── verifica MIME
+   ├── verifica tamanho
+   ├── gera nome interno
+   ├── calcula hash
+   └── registra metadados
+          │
+          ▼
+      Storage
+          │
+          ▼
+      PostgreSQL
+      (metadados)
+```
+
+Isso é importante porque o banco não será utilizado como depósito de PDFs.
+
+---
+
+# 10.10 Camada `services.py`
+
+Um ponto que quero estabelecer desde agora:
+
+**não vamos colocar toda a regra de negócio dentro das Views.**
+
+Por exemplo, futuramente teremos algo como:
+
+```text
+documentos/
+    views.py
+    services.py
+```
+
+A View recebe a solicitação:
+
+```text
+POST /documentos/upload
+```
+
+e o Service executa:
+
+```text
+validar arquivo
+registrar documento
+calcular hash
+determinar versão
+registrar status
+gerar evento
+```
+
+Isso deixa o código muito mais organizado.
+
+---
+
+# 10.11 Regra de negócio da conformidade
+
+Também ficará isolada em serviços.
+
+Conceitualmente:
+
+```text
+avaliar_conformidade(trabalhador, prestacao)
+```
+
+poderá fazer:
+
+```text
+1. Identificar atividades
+2. Identificar requisitos
+3. Identificar documentos necessários
+4. Localizar documentos enviados
+5. Verificar validade
+6. Verificar aprovação
+7. Determinar pendências
+8. Calcular status
+```
+
+Resultado:
+
+```text
+CONFORME
+PENDENTE
+IRREGULAR
+```
+
+Posteriormente poderemos substituir ou ampliar essa lógica sem reconstruir o sistema inteiro.
+
+---
+
+# 10.12 Dashboard futuro
+
+A arquitetura já permitirá um painel como:
+
+```text
+┌─────────────────────────────────────────────┐
+│              SMARTDOC TERCEIROS             │
+├─────────────┬─────────────┬─────────────────┤
+│ TERCEIRIZADAS│ TRABALHADORES│ PRESTAÇÕES    │
+│     28       │     436      │      41        │
+├─────────────┴─────────────┴─────────────────┤
+│                                             │
+│          CONFORMIDADE GERAL                 │
+│                                             │
+│       ████████████████  86%                 │
+│                                             │
+├─────────────────────────────────────────────┤
+│ DOCUMENTOS PRÓXIMOS DO VENCIMENTO           │
+│                                             │
+│  30 dias ............ 17                    │
+│  15 dias ............  8                    │
+│  07 dias ............  3                    │
+│  Vencidos ...........  5                    │
+└─────────────────────────────────────────────┘
+```
+
+Mas **não vamos desenvolver o dashboard agora**. Primeiro construiremos os fluxos que alimentam esses indicadores.
+
+---
+
+# 10.13 Ordem de implementação
+
+A partir daqui, nossa sequência será:
+
+```text
+FASE 10
+Arquitetura Django                 ← estamos aqui
+        ↓
+FASE 11
+Configuração do ambiente
+        ↓
+FASE 12
+Models Django
+        ↓
+FASE 13
+Migrations + PostgreSQL
+        ↓
+FASE 14
+Autenticação e perfis
+        ↓
+FASE 15
+Cadastro de empresas
+        ↓
+FASE 16
+Segmentos + tipos de serviço
+        ↓
+FASE 17
+Prestação de serviço
+        ↓
+FASE 18
+Trabalhadores
+        ↓
+FASE 19
+Documentos + upload
+        ↓
+FASE 20
+Validação documental
+        ↓
+FASE 21
+Matriz de conformidade
+        ↓
+FASE 22
+Alertas
+        ↓
+FASE 23
+Dashboard
+```
+
+Depois:
+
+```text
+FASE 24 → PGR/PCMSO
+FASE 25 → Motor de regras avançado
+FASE 26 → OCR
+FASE 27 → IA
+FASE 28 → API
+FASE 29 → Controle de acesso
+FASE 30 → Preparação para produção/SaaS comercial
+```
+
+## Próximo passo: FASE 11
+
+Agora sim vamos entrar na parte prática.
+
+Na **FASE 11**, vamos preparar o ambiente Django no Windows, criar o projeto, configurar o PostgreSQL, criar o ambiente virtual, instalar as dependências e deixar o **SmartDoc Terceiros executando localmente**.
+
+Depois disso começaremos a construir os Models, começando por **Perfil → Usuário → Empresa → Unidade → Segmento → Tipo de Serviço**.
