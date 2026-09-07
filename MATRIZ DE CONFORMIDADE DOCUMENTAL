@@ -1,0 +1,817 @@
+Perfeito. Vamos avançar para uma etapa estratégica do projeto.
+
+# FASE 6 — MATRIZ DE CONFORMIDADE DOCUMENTAL
+
+## SmartDoc Terceiros
+
+Esta fase define a lógica que permitirá ao sistema responder automaticamente à pergunta:
+
+> **“Quais documentos este trabalhador precisa apresentar para executar determinada atividade?”**
+
+Aqui está um dos principais diferenciais do sistema. Não queremos criar apenas um repositório de PDFs. O objetivo é construir uma plataforma orientada por **requisitos de conformidade**.
+
+---
+
+# 1. Conceito da Matriz de Conformidade
+
+A lógica central será:
+
+```text
+EMPRESA TERCEIRIZADA
+        │
+        ▼
+PRESTAÇÃO DE SERVIÇO
+        │
+        ▼
+ATIVIDADES EXECUTADAS
+        │
+        ▼
+FUNÇÃO DO TRABALHADOR
+        │
+        ▼
+REQUISITOS APLICÁVEIS
+        │
+        ▼
+DOCUMENTOS EXIGIDOS
+        │
+        ▼
+VALIDAÇÃO
+        │
+        ▼
+STATUS DE CONFORMIDADE
+```
+
+O sistema deverá ser capaz de gerar um **checklist documental dinâmico**.
+
+---
+
+# 2. Separação dos Tipos de Requisitos
+
+Para evitar uma matriz confusa, proponho dividir os requisitos em cinco grupos.
+
+```text
+REQUISITOS
+│
+├── EMPRESARIAIS
+│
+├── TRABALHISTAS
+│
+├── SST
+│
+├── SAÚDE OCUPACIONAL
+│
+└── TREINAMENTOS
+```
+
+---
+
+# 3. Camada 1 — Documentos Empresariais
+
+São documentos relacionados à empresa terceirizada.
+
+Matriz inicial:
+
+| Documento                       | Categoria         |    Possui Validade |             Obrigatório |
+| ------------------------------- | ----------------- | -----------------: | ----------------------: |
+| Cartão CNPJ                     | Empresarial       |                Não |                     Sim |
+| Contrato Social                 | Empresarial       |                Não |      Conforme exigência |
+| Inscrição Estadual              | Empresarial       |                Não | Conforme aplicabilidade |
+| Inscrição Municipal             | Empresarial       |                Não | Conforme aplicabilidade |
+| Certidão de Regularidade Fiscal | Fiscal            |                Sim |            Configurável |
+| PGR                             | SST               |    Sim/Controlável |      Conforme atividade |
+| PCMSO                           | Saúde Ocupacional |    Sim/Controlável | Conforme aplicabilidade |
+| GRO                             | SST               | Conforme documento |            Configurável |
+| Apólice de Seguro               | Empresarial       |                Sim |            Configurável |
+| Licença/Alvará                  | Legal             |                Sim |      Conforme atividade |
+| ART/RRT                         | Técnica           |                Sim |        Conforme serviço |
+| Certificação Técnica            | Técnica           |                Sim |      Conforme atividade |
+
+### Decisão importante
+
+Nem todo documento deve ser obrigatório para todas as empresas.
+
+Por isso, o sistema não deve funcionar assim:
+
+```text
+Toda empresa
+      ↓
+Mesma lista de documentos
+```
+
+O correto:
+
+```text
+TIPO DE SERVIÇO
+      +
+ATIVIDADES
+      +
+REGRAS DA EMPRESA CLIENTE
+      ↓
+CHECKLIST EMPRESARIAL
+```
+
+---
+
+# 4. Camada 2 — Documentos Trabalhistas
+
+São documentos relacionados ao vínculo do trabalhador com a empresa terceirizada.
+
+Matriz inicial:
+
+| Documento                               |  Obrigatório |              Validade |
+| --------------------------------------- | -----------: | --------------------: |
+| Documento de identificação cadastral    | Configurável |                   Não |
+| Registro do trabalhador                 | Configurável |        Conforme regra |
+| Comprovante de vínculo                  | Configurável |                   Não |
+| Ficha de registro                       | Configurável |                   Não |
+| Contrato de trabalho                    | Configurável |     Conforme contrato |
+| Documento de admissão                   | Configurável |                   Não |
+| Relação de trabalhadores                |          Sim | Atualização periódica |
+| Comprovante de regularidade trabalhista | Configurável |                   Sim |
+
+No MVP, devemos tomar cuidado para não solicitar documentos pessoais além do necessário.
+
+O sistema deve trabalhar com **minimização de dados**.
+
+---
+
+# 5. Camada 3 — Saúde Ocupacional
+
+Aqui entram os requisitos relacionados ao PCMSO e à aptidão do trabalhador.
+
+Exemplo:
+
+| Requisito                         | Documento           | Controle         |
+| --------------------------------- | ------------------- | ---------------- |
+| Aptidão ocupacional               | ASO                 | Data de validade |
+| Aptidão para atividade específica | ASO compatível      | Validação        |
+| Exame complementar                | Documento aplicável | Conforme PCMSO   |
+| Controle médico específico        | Conforme PCMSO      | Configurável     |
+
+Fluxo futuro:
+
+```text
+PCMSO
+   │
+   ▼
+REQUISITOS MÉDICOS
+   │
+   ▼
+FUNÇÃO / ATIVIDADE
+   │
+   ▼
+TRABALHADOR
+   │
+   ▼
+DOCUMENTOS EXIGIDOS
+```
+
+### MVP
+
+Inicialmente, o sistema **não interpretará automaticamente o conteúdo médico do PCMSO**.
+
+O Gestor poderá configurar os requisitos aplicáveis.
+
+Exemplo:
+
+```text
+Função: Soldador
+
+Requisitos:
+
+✓ ASO válido
+
+✓ Aptidão compatível
+
+✓ Treinamento obrigatório
+```
+
+---
+
+# 6. Camada 4 — Segurança do Trabalho
+
+Essa será uma das maiores matrizes do sistema.
+
+O sistema deverá permitir relacionar:
+
+```text
+ATIVIDADE
+    ↓
+RISCO
+    ↓
+REQUISITO
+    ↓
+DOCUMENTO
+```
+
+Exemplo:
+
+```text
+ATIVIDADE
+
+Trabalho em altura
+       │
+       ▼
+RISCOS
+
+Queda
+       │
+       ▼
+REQUISITOS
+
+Capacitação aplicável
+ASO compatível
+EPI aplicável
+       │
+       ▼
+DOCUMENTAÇÃO
+```
+
+A implementação deve ser **configurável**, evitando regras rígidas diretamente no código.
+
+---
+
+# 7. Camada 5 — Treinamentos
+
+Os treinamentos devem ser tratados como uma categoria documental específica.
+
+Entidade conceitual:
+
+```text
+TREINAMENTO
+│
+├── Nome
+├── Norma / Referência
+├── Carga horária
+├── Data realização
+├── Data validade
+├── Certificado
+└── Trabalhador
+```
+
+Uma decisão arquitetural relevante:
+
+### Não recomendo criar inicialmente uma tabela separada para cada NR.
+
+Errado:
+
+```text
+TreinamentoNR10
+
+TreinamentoNR12
+
+TreinamentoNR33
+
+TreinamentoNR35
+```
+
+Melhor:
+
+```text
+Treinamento
+     │
+     ▼
+TipoTreinamento
+```
+
+Exemplo:
+
+```text
+TipoTreinamento
+
+NR-10
+NR-12
+NR-33
+NR-35
+Integração
+Brigada
+Outros
+```
+
+---
+
+# 8. Matriz Inicial por Atividade
+
+Agora vamos estruturar exemplos práticos.
+
+Importante: esta matriz inicial será uma **base configurável do produto**, e não uma regra jurídica fixa. A aplicabilidade deve depender do escopo real da atividade, análise de riscos, função e requisitos da contratante.
+
+---
+
+## 8.1 Trabalho em Altura
+
+### Atividade
+
+```text
+TRABALHO EM ALTURA
+```
+
+### Requisitos iniciais
+
+| Categoria         | Requisito                                                        |
+| ----------------- | ---------------------------------------------------------------- |
+| Saúde Ocupacional | ASO válido e compatível com a atividade                          |
+| Treinamento       | Capacitação aplicável                                            |
+| SST               | Evidência dos requisitos de segurança definidos para a atividade |
+| EPI               | Registro/documentação aplicável                                  |
+| Integração        | Integração de segurança, quando exigida                          |
+
+---
+
+## 8.2 Serviços Elétricos
+
+| Categoria         | Requisito                                  |
+| ----------------- | ------------------------------------------ |
+| Saúde Ocupacional | ASO válido e compatível                    |
+| Treinamento       | Capacitação aplicável à atividade elétrica |
+| SST               | Evidências de controles definidos          |
+| EPI               | Registro aplicável                         |
+| Integração        | Conforme exigência da unidade              |
+
+---
+
+## 8.3 Espaço Confinado
+
+| Categoria         | Requisito                            |
+| ----------------- | ------------------------------------ |
+| Saúde Ocupacional | Aptidão ocupacional aplicável        |
+| Treinamento       | Capacitação aplicável                |
+| SST               | Procedimentos e controles aplicáveis |
+| EPI               | Registro aplicável                   |
+| Emergência        | Evidências conforme planejamento     |
+
+---
+
+## 8.4 Construção Civil
+
+| Categoria         | Requisito                      |
+| ----------------- | ------------------------------ |
+| Saúde Ocupacional | ASO válido                     |
+| SST               | Requisitos conforme escopo     |
+| Treinamento       | Conforme atividades            |
+| EPI               | Registro aplicável             |
+| Integração        | Integração de segurança        |
+| Trabalhista       | Vínculo regular do trabalhador |
+
+---
+
+## 8.5 Soldagem
+
+| Categoria          | Requisito                 |
+| ------------------ | ------------------------- |
+| Saúde Ocupacional  | ASO válido                |
+| Treinamento        | Capacitação aplicável     |
+| SST                | Procedimentos e controles |
+| EPI                | Registro aplicável        |
+| Atividade especial | Conforme análise de risco |
+
+---
+
+## 8.6 Limpeza de Cisterna
+
+Esta atividade é particularmente interessante porque pode envolver diferentes cenários.
+
+```text
+LIMPEZA DE CISTERNA
+        │
+        ├── Espaço confinado?
+        │
+        ├── Produtos químicos?
+        │
+        ├── Trabalho em altura?
+        │
+        └── Risco biológico?
+```
+
+Portanto, o sistema não deve simplesmente fazer:
+
+```text
+Limpeza de Cisterna
+       ↓
+Checklist fixo
+```
+
+O ideal:
+
+```text
+Limpeza de Cisterna
+       ↓
+Selecionar condições da atividade
+       ↓
+Aplicar riscos
+       ↓
+Gerar requisitos
+```
+
+Esse é um ponto importante para a inteligência futura da plataforma.
+
+---
+
+# 9. Modelo baseado em Risco
+
+Para evolução do produto, proponho incluir a entidade:
+
+```text
+RISCO
+```
+
+Exemplos iniciais:
+
+```text
+Queda de altura
+
+Choque elétrico
+
+Espaço confinado
+
+Agentes químicos
+
+Agentes biológicos
+
+Ruído
+
+Calor
+
+Máquinas
+
+Movimentação de cargas
+
+Escavação
+
+Incêndio
+
+Explosão
+```
+
+Relacionamento:
+
+```text
+ATIVIDADE
+     │
+     ▼
+ATIVIDADE_RISCO
+     │
+     ▼
+RISCO
+     │
+     ▼
+RISCO_REQUISITO
+     │
+     ▼
+REQUISITO
+```
+
+Isso cria uma arquitetura extremamente flexível.
+
+---
+
+# 10. Exemplo completo de funcionamento
+
+Imagine o seguinte cenário.
+
+## Empresa
+
+```text
+Construtora ABC
+```
+
+## Serviço
+
+```text
+Manutenção Industrial
+```
+
+## Atividade
+
+```text
+Manutenção em estrutura elevada
+```
+
+## Riscos identificados
+
+```text
+✓ Trabalho em altura
+
+✓ Eletricidade
+
+✓ Máquinas
+```
+
+O sistema executa:
+
+```text
+ATIVIDADES
+      │
+      ▼
+IDENTIFICA RISCOS
+      │
+      ▼
+BUSCA REQUISITOS
+      │
+      ▼
+IDENTIFICA DOCUMENTOS
+      │
+      ▼
+GERA CHECKLIST
+```
+
+Resultado conceitual:
+
+```text
+CHECKLIST DO TRABALHADOR
+
+[ ] ASO válido
+
+[ ] Capacitação aplicável
+
+[ ] Registro de EPI aplicável
+
+[ ] Integração de segurança
+
+[ ] Outros requisitos definidos pela matriz
+```
+
+O sistema então verifica:
+
+```text
+DOCUMENTO EXISTE?
+        │
+   ┌────┴────┐
+   │         │
+  NÃO       SIM
+   │         │
+   ▼         ▼
+PENDENTE   VALIDADE OK?
+              │
+         ┌────┴────┐
+         │         │
+        NÃO       SIM
+         │         │
+         ▼         ▼
+     IRREGULAR  VALIDAR STATUS
+```
+
+---
+
+# 11. O verdadeiro Motor de Conformidade
+
+Com base no que construímos, podemos formalizar o conceito.
+
+## Entrada
+
+```text
+Empresa
+
+Prestação de Serviço
+
+Atividade
+
+Riscos
+
+Função
+
+Trabalhador
+```
+
+## Processamento
+
+```text
+Identificar regras aplicáveis
+        ↓
+Identificar documentos necessários
+        ↓
+Consultar documentos enviados
+        ↓
+Verificar validade
+        ↓
+Verificar status da validação
+```
+
+## Saída
+
+```text
+STATUS DE CONFORMIDADE
+```
+
+---
+
+# 12. Algoritmo conceitual
+
+```text
+INICIAR
+
+OBTER ATIVIDADES DO TRABALHADOR
+
+PARA CADA ATIVIDADE:
+
+    OBTER RISCOS
+
+    PARA CADA RISCO:
+
+        OBTER REQUISITOS
+
+        PARA CADA REQUISITO:
+
+            OBTER DOCUMENTO EXIGIDO
+
+            DOCUMENTO EXISTE?
+
+                NÃO
+                    STATUS = PENDENTE
+
+                SIM
+                    DOCUMENTO VÁLIDO?
+
+                        NÃO
+                            STATUS = IRREGULAR
+
+                        SIM
+                            DOCUMENTO APROVADO?
+
+                                NÃO
+                                    STATUS = PENDENTE
+
+                                SIM
+                                    STATUS = CONFORME
+
+FINALIZAR
+```
+
+---
+
+# 13. Matriz conceitual no banco
+
+Ainda sem criar SQL, nosso modelo começa a indicar estas entidades:
+
+```text
+SERVICO
+   │
+   ▼
+ATIVIDADE
+   │
+   ▼
+RISCO
+   │
+   ▼
+REQUISITO
+   │
+   ▼
+TIPO_DOCUMENTO
+```
+
+Com tabelas associativas:
+
+```text
+servico_atividade
+
+atividade_risco
+
+risco_requisito
+
+requisito_tipo_documento
+```
+
+Isso é muito mais escalável do que colocar regras diretamente no código Django.
+
+---
+
+# 14. Minha recomendação para o MVP
+
+Não devemos implementar toda a inteligência da matriz logo no início.
+
+Minha recomendação é dividir em três níveis.
+
+### Nível 1 — MVP
+
+```text
+ATIVIDADE
+      ↓
+TIPO DOCUMENTO
+```
+
+Exemplo:
+
+```text
+Trabalho em altura
+      ↓
+ASO
+
+Treinamento aplicável
+
+Registro documental aplicável
+```
+
+### Nível 2 — Evolução
+
+```text
+ATIVIDADE
+      ↓
+RISCO
+      ↓
+TIPO DOCUMENTO
+```
+
+### Nível 3 — Produto Inteligente
+
+```text
+PGR PDF
+      ↓
+Extração estruturada
+      ↓
+Identificação de riscos
+      ↓
+Matriz automática
+      ↓
+Requisitos documentais
+```
+
+Essa evolução é tecnicamente mais segura e comercialmente mais racional.
+
+---
+
+# 15. Decisão arquitetural da Fase 6
+
+Para o **SmartDoc Terceiros**, proponho formalizar inicialmente:
+
+```text
+ATIVIDADE
+      │
+      ▼
+REQUISITO_DOCUMENTAL
+      │
+      ▼
+TIPO_DOCUMENTO
+```
+
+E deixar preparado para expansão:
+
+```text
+ATIVIDADE
+      ↓
+RISCO
+      ↓
+REQUISITO
+      ↓
+TIPO_DOCUMENTO
+```
+
+Dessa forma:
+
+* o MVP permanece simples;
+* o banco não fica excessivamente complexo;
+* as regras não ficam fixas no código;
+* podemos evoluir para interpretação do PGR;
+* podemos futuramente incorporar IA/OCR;
+* o produto ganha um diferencial tecnológico real.
+
+---
+
+# Resultado da FASE 6
+
+Agora temos a base conceitual do núcleo inteligente:
+
+```text
+EMPRESA
+   │
+   ▼
+SERVIÇO
+   │
+   ▼
+ATIVIDADE
+   │
+   ▼
+REQUISITOS DOCUMENTAIS
+   │
+   ▼
+CHECKLIST AUTOMÁTICO
+   │
+   ▼
+DOCUMENTOS ENVIADOS
+   │
+   ▼
+VALIDAÇÃO
+   │
+   ▼
+STATUS DE CONFORMIDADE
+```
+
+## Próxima etapa — FASE 7
+
+Agora temos elementos suficientes para iniciar a **Modelagem Lógica do Banco de Dados**.
+
+A próxima fase será:
+
+# FASE 7 — MODELO ENTIDADE-RELACIONAMENTO (DER)
+
+Vamos construir formalmente:
+
+* entidades;
+* atributos;
+* chaves primárias;
+* chaves estrangeiras;
+* cardinalidades;
+* tabelas associativas;
+* relacionamentos N:N;
+* estrutura preparada para Django ORM e PostgreSQL.
+
+Minha recomendação é que, na próxima etapa, façamos primeiro o **DER conceitual completo**, depois o **modelo lógico das tabelas**, e somente após validação avancemos para o **modelo físico em PostgreSQL e Django Models**.
