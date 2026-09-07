@@ -1,0 +1,1216 @@
+Vamos avançar para a **FASE 7 — Modelo Entidade-Relacionamento (DER)**.
+
+Agora transformaremos tudo que definimos nas fases anteriores em uma estrutura lógica de dados. Ainda não vamos escrever SQL nem criar os Models do Django. O objetivo é validar a arquitetura do domínio primeiro.
+
+# FASE 7 — DER CONCEITUAL
+
+## SmartDoc Terceiros
+
+---
+
+# 1. Visão macro do modelo
+
+O sistema possui seis núcleos principais:
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│                  SMARTDOC TERCEIROS                     │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  IDENTIDADE E ACESSO                                    │
+│  ├── Usuário                                            │
+│  └── Perfil                                             │
+│                                                         │
+│  ORGANIZAÇÕES                                           │
+│  ├── Empresa                                            │
+│  └── Unidade                                            │
+│                                                         │
+│  OPERAÇÕES                                              │
+│  ├── Tipo de Serviço                                    │
+│  ├── Prestação de Serviço                               │
+│  └── Atividade                                          │
+│                                                         │
+│  TRABALHADORES                                          │
+│  ├── Trabalhador                                        │
+│  ├── Alocação                                           │
+│  └── Atualização de Quadro                              │
+│                                                         │
+│  DOCUMENTOS                                             │
+│  ├── Tipo Documento                                     │
+│  ├── Documento Empresa                                  │
+│  ├── Documento Trabalhador                              │
+│  └── Validação                                          │
+│                                                         │
+│  CONFORMIDADE                                           │
+│  ├── Requisito Documental                               │
+│  └── Matriz Atividade x Documento                       │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+# 2. Núcleo de Identidade e Acesso
+
+## Entidade: PERFIL
+
+```text
+PERFIL
+──────────────────────
+id
+nome
+descricao
+ativo
+```
+
+Perfis iniciais:
+
+* Usuário Comum;
+* Gestor;
+* Administrador.
+
+### Relacionamento
+
+```text
+PERFIL
+   │
+   │ 1
+   │
+   ▼
+   N
+USUARIO
+```
+
+Um perfil pode possuir vários usuários.
+
+---
+
+## Entidade: USUARIO
+
+```text
+USUARIO
+──────────────────────
+id
+nome
+email
+senha
+perfil_id
+empresa_id
+ativo
+ultimo_acesso
+criado_em
+atualizado_em
+```
+
+### Observação arquitetural
+
+No Django, não devemos armazenar a senha manualmente. Utilizaremos o sistema de autenticação do framework, com `AbstractUser` ou modelo customizado.
+
+---
+
+# 3. Núcleo de Organizações
+
+## Entidade: EMPRESA
+
+```text
+EMPRESA
+────────────────────────────
+id
+razao_social
+nome_fantasia
+cnpj
+inscricao_estadual
+inscricao_municipal
+email
+telefone
+tipo
+status
+ativo
+criado_em
+atualizado_em
+```
+
+### Tipo
+
+```text
+CLIENTE
+
+TERCEIRIZADA
+```
+
+Relacionamento com usuários:
+
+```text
+EMPRESA
+   │
+   │ 1
+   │
+   ▼
+   N
+USUARIO
+```
+
+---
+
+## Entidade: UNIDADE
+
+Uma empresa cliente poderá possuir diversas unidades.
+
+```text
+UNIDADE
+──────────────────────
+id
+empresa_id
+nome
+tipo
+logradouro
+numero
+bairro
+cidade
+estado
+cep
+ativo
+```
+
+Relacionamento:
+
+```text
+EMPRESA CLIENTE
+       │
+       │ 1
+       │
+       ▼
+       N
+UNIDADE
+```
+
+---
+
+# 4. Núcleo de Serviços
+
+Aqui temos uma diferença importante.
+
+## TIPO_SERVICO
+
+Representa o catálogo.
+
+```text
+TIPO_SERVICO
+──────────────────────
+id
+nome
+descricao
+ativo
+```
+
+Exemplos:
+
+* Construção Civil;
+* Manutenção Industrial;
+* Limpeza de Cisterna;
+* Serviços Elétricos;
+* Tecnologia da Informação.
+
+---
+
+## PRESTACAO_SERVICO
+
+Representa a ocorrência real.
+
+```text
+PRESTACAO_SERVICO
+────────────────────────────
+id
+
+empresa_cliente_id
+empresa_terceirizada_id
+
+unidade_id
+tipo_servico_id
+
+descricao
+
+data_inicio
+
+tipo_prazo
+
+data_prevista_termino
+
+justificativa_prazo_indeterminado
+
+status
+
+ativo
+
+criado_em
+atualizado_em
+```
+
+Relacionamento:
+
+```text
+EMPRESA CLIENTE
+       │
+       │ 1
+       ▼
+       N
+PRESTACAO_SERVICO
+       N
+       ▲
+       │ 1
+EMPRESA TERCEIRIZADA
+```
+
+Uma empresa terceirizada poderá possuir várias prestações de serviço.
+
+---
+
+# 5. Núcleo de Atividades
+
+## ATIVIDADE
+
+```text
+ATIVIDADE
+──────────────────────
+id
+nome
+descricao
+ativo
+```
+
+Exemplos:
+
+* Trabalho em altura;
+* Soldagem;
+* Escavação;
+* Manutenção elétrica;
+* Operação de máquinas.
+
+---
+
+## PRESTACAO_ATIVIDADE
+
+Necessária porque uma prestação pode possuir várias atividades.
+
+```text
+PRESTACAO_ATIVIDADE
+──────────────────────
+id
+prestacao_servico_id
+atividade_id
+observacao
+ativo
+```
+
+Relacionamento:
+
+```text
+PRESTACAO_SERVICO
+        │
+        │ N
+        ▼
+PRESTACAO_ATIVIDADE
+        ▲
+        │ N
+        │
+    ATIVIDADE
+```
+
+---
+
+# 6. Núcleo de Trabalhadores
+
+## TRABALHADOR
+
+```text
+TRABALHADOR
+──────────────────────
+id
+
+empresa_id
+
+nome
+
+cpf
+
+matricula
+
+funcao
+
+data_admissao
+
+status
+
+ativo
+
+criado_em
+
+atualizado_em
+```
+
+Relacionamento:
+
+```text
+EMPRESA TERCEIRIZADA
+        │
+        │ 1
+        ▼
+        N
+   TRABALHADOR
+```
+
+---
+
+# 7. Alocação de Trabalhadores
+
+Um trabalhador poderá atuar em diferentes prestações.
+
+Portanto:
+
+## ALOCACAO_TRABALHADOR
+
+```text
+ALOCACAO_TRABALHADOR
+────────────────────────
+id
+
+trabalhador_id
+
+prestacao_servico_id
+
+data_inicio
+
+data_fim
+
+status
+
+ativo
+```
+
+Relacionamento:
+
+```text
+TRABALHADOR
+      │
+      │ N
+      ▼
+ALOCACAO_TRABALHADOR
+      ▲
+      │ N
+      │
+PRESTACAO_SERVICO
+```
+
+---
+
+# 8. Atividades Executadas pelo Trabalhador
+
+Agora precisamos relacionar:
+
+```text
+TRABALHADOR
+```
+
+com:
+
+```text
+ATIVIDADE
+```
+
+mas dentro de uma prestação específica.
+
+Por isso:
+
+## ALOCACAO_ATIVIDADE
+
+```text
+ALOCACAO_ATIVIDADE
+────────────────────────
+id
+
+alocacao_trabalhador_id
+
+prestacao_atividade_id
+
+ativo
+```
+
+Relacionamento:
+
+```text
+ALOCACAO_TRABALHADOR
+        │
+        │ 1
+        ▼
+        N
+ALOCACAO_ATIVIDADE
+        N
+        │
+        ▼
+PRESTACAO_ATIVIDADE
+```
+
+Isso responde precisamente:
+
+> Qual atividade determinado trabalhador executa em determinado contrato/prestação?
+
+---
+
+# 9. Gestão de Documentos
+
+Agora entramos no núcleo do sistema.
+
+## TIPO_DOCUMENTO
+
+```text
+TIPO_DOCUMENTO
+────────────────────────────
+id
+
+nome
+
+categoria
+
+descricao
+
+possui_validade
+
+exige_data_inicio
+
+exige_data_validade
+
+ativo
+```
+
+Categorias:
+
+```text
+EMPRESARIAL
+
+TRABALHISTA
+
+SST
+
+SAUDE_OCUPACIONAL
+
+TREINAMENTO
+
+OUTROS
+```
+
+---
+
+# 10. DOCUMENTO_EMPRESA
+
+```text
+DOCUMENTO_EMPRESA
+────────────────────────────
+id
+
+empresa_id
+
+tipo_documento_id
+
+arquivo
+
+nome_original
+
+nome_armazenado
+
+mime_type
+
+tamanho
+
+hash_arquivo
+
+data_inicio
+
+data_validade
+
+status
+
+versao
+
+enviado_por_id
+
+enviado_em
+
+ativo
+```
+
+Relacionamento:
+
+```text
+EMPRESA
+    │
+    │ 1
+    ▼
+    N
+DOCUMENTO_EMPRESA
+    │
+    │ N
+    ▼
+    1
+TIPO_DOCUMENTO
+```
+
+---
+
+# 11. DOCUMENTO_TRABALHADOR
+
+```text
+DOCUMENTO_TRABALHADOR
+────────────────────────────
+id
+
+trabalhador_id
+
+tipo_documento_id
+
+arquivo
+
+nome_original
+
+nome_armazenado
+
+mime_type
+
+tamanho
+
+hash_arquivo
+
+data_inicio
+
+data_validade
+
+status
+
+versao
+
+enviado_por_id
+
+enviado_em
+
+ativo
+```
+
+Relacionamento:
+
+```text
+TRABALHADOR
+      │
+      │ 1
+      ▼
+      N
+DOCUMENTO_TRABALHADOR
+      │
+      │ N
+      ▼
+      1
+TIPO_DOCUMENTO
+```
+
+---
+
+# 12. VALIDAÇÃO DOCUMENTAL
+
+A validação deve possuir vida própria.
+
+Inicialmente temos duas possibilidades:
+
+### Opção 1
+
+```text
+VALIDACAO_DOCUMENTO_EMPRESA
+
+VALIDACAO_DOCUMENTO_TRABALHADOR
+```
+
+### Opção 2
+
+```text
+VALIDACAO
+```
+
+genérica.
+
+## Minha recomendação
+
+Para o MVP:
+
+```text
+VALIDACAO_DOCUMENTO
+```
+
+com estrutura preparada para os dois tipos.
+
+Porém, para evitar relacionamento polimórfico complexo no PostgreSQL, podemos utilizar duas tabelas de validação no banco físico.
+
+Conceitualmente:
+
+```text
+VALIDACAO
+──────────────────────
+id
+
+validador_id
+
+status
+
+observacao
+
+tipo_validacao
+
+data_validacao
+```
+
+Status:
+
+```text
+APROVADO
+
+REPROVADO
+
+CORRECAO_SOLICITADA
+```
+
+Tipos:
+
+```text
+MANUAL
+
+AUTOMATICA
+```
+
+Relacionamento conceitual:
+
+```text
+DOCUMENTO
+     │
+     ▼
+VALIDACAO
+     │
+     ▼
+USUARIO
+```
+
+---
+
+# 13. Matriz de Conformidade
+
+Aqui está o diferencial do sistema.
+
+## REQUISITO_DOCUMENTAL
+
+Representa uma regra configurável.
+
+```text
+REQUISITO_DOCUMENTAL
+────────────────────────
+id
+
+nome
+
+descricao
+
+obrigatorio
+
+ativo
+```
+
+Exemplos:
+
+```text
+ASO válido
+
+Treinamento obrigatório
+
+Integração obrigatória
+
+Registro de EPI
+```
+
+---
+
+## ATIVIDADE_REQUISITO
+
+Relaciona atividade com requisito.
+
+```text
+ATIVIDADE_REQUISITO
+────────────────────────
+id
+
+atividade_id
+
+requisito_id
+
+obrigatorio
+
+ativo
+```
+
+---
+
+## REQUISITO_DOCUMENTO
+
+Relaciona requisito com tipo documental.
+
+```text
+REQUISITO_DOCUMENTO
+────────────────────────
+id
+
+requisito_id
+
+tipo_documento_id
+
+ativo
+```
+
+Fluxo:
+
+```text
+ATIVIDADE
+    │
+    ▼
+ATIVIDADE_REQUISITO
+    │
+    ▼
+REQUISITO_DOCUMENTAL
+    │
+    ▼
+REQUISITO_DOCUMENTO
+    │
+    ▼
+TIPO_DOCUMENTO
+```
+
+---
+
+# 14. Atualização do Quadro de Trabalhadores
+
+## ATUALIZACAO_QUADRO
+
+```text
+ATUALIZACAO_QUADRO
+────────────────────────
+id
+
+empresa_id
+
+data_solicitacao
+
+prazo_resposta
+
+data_confirmacao
+
+status
+
+confirmado_por_id
+
+observacao
+
+criado_em
+```
+
+Status:
+
+```text
+PENDENTE
+
+CONFIRMADO_SEM_ALTERACAO
+
+CONFIRMADO_COM_ALTERACAO
+
+ATRASADO
+```
+
+Relacionamento:
+
+```text
+EMPRESA
+   │
+   │ 1
+   ▼
+   N
+ATUALIZACAO_QUADRO
+```
+
+---
+
+# 15. Alertas
+
+## ALERTA
+
+```text
+ALERTA
+────────────────────────
+id
+
+usuario_id
+
+tipo
+
+titulo
+
+mensagem
+
+referencia_tipo
+
+referencia_id
+
+status
+
+criado_em
+
+enviado_em
+
+lido_em
+```
+
+Tipos:
+
+```text
+VENCIMENTO_30_DIAS
+
+VENCIMENTO_15_DIAS
+
+VENCIMENTO_7_DIAS
+
+DOCUMENTO_VENCIDO
+
+ATUALIZACAO_QUADRO
+```
+
+---
+
+# 16. Auditoria
+
+## AUDITORIA
+
+```text
+AUDITORIA
+────────────────────────
+id
+
+usuario_id
+
+acao
+
+entidade
+
+registro_id
+
+dados_anteriores
+
+dados_novos
+
+ip
+
+data_hora
+```
+
+---
+
+# 17. DER Consolidado
+
+Agora podemos visualizar os principais relacionamentos.
+
+```text
+                           ┌─────────────┐
+                           │   PERFIL    │
+                           └──────┬──────┘
+                                  │
+                                  │ 1:N
+                                  ▼
+┌──────────────┐            ┌─────────────┐
+│   EMPRESA    │───────────▶│   USUARIO   │
+└──────┬───────┘     1:N    └─────────────┘
+       │
+       │ 1:N
+       ▼
+┌──────────────┐
+│   UNIDADE    │
+└──────┬───────┘
+       │
+       │
+       ▼
+┌─────────────────────┐
+│ PRESTACAO_SERVICO   │
+└──────────┬──────────┘
+           │
+           │ N:N
+           ▼
+┌─────────────────────┐
+│ PRESTACAO_ATIVIDADE │
+└──────────┬──────────┘
+           │
+           ▼
+      ┌───────────┐
+      │ ATIVIDADE │
+      └─────┬─────┘
+            │
+            ▼
+┌─────────────────────┐
+│ ATIVIDADE_REQUISITO │
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│REQUISITO_DOCUMENTAL │
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│ REQUISITO_DOCUMENTO │
+└──────────┬──────────┘
+           ▼
+┌─────────────────────┐
+│   TIPO_DOCUMENTO    │
+└──────────┬──────────┘
+           │
+      ┌────┴─────┐
+      ▼          ▼
+DOCUMENTO     DOCUMENTO
+EMPRESA      TRABALHADOR
+```
+
+---
+
+# 18. DER dos Trabalhadores
+
+```text
+EMPRESA
+   │
+   │ 1:N
+   ▼
+TRABALHADOR
+   │
+   │ 1:N
+   ▼
+ALOCACAO_TRABALHADOR
+   │
+   │ N:1
+   ▼
+PRESTACAO_SERVICO
+   │
+   │ 1:N
+   ▼
+PRESTACAO_ATIVIDADE
+   │
+   │ N:1
+   ▼
+ATIVIDADE
+```
+
+Com o vínculo específico:
+
+```text
+ALOCACAO_TRABALHADOR
+          │
+          │
+          ▼
+ALOCACAO_ATIVIDADE
+          │
+          ▼
+PRESTACAO_ATIVIDADE
+```
+
+---
+
+# 19. Modelo conceitual completo
+
+As entidades consolidadas são:
+
+### Identidade
+
+```text
+Perfil
+Usuario
+```
+
+### Organizações
+
+```text
+Empresa
+Unidade
+```
+
+### Serviços
+
+```text
+TipoServico
+PrestacaoServico
+Atividade
+PrestacaoAtividade
+```
+
+### Trabalhadores
+
+```text
+Trabalhador
+AlocacaoTrabalhador
+AlocacaoAtividade
+AtualizacaoQuadro
+```
+
+### Documentos
+
+```text
+TipoDocumento
+DocumentoEmpresa
+DocumentoTrabalhador
+```
+
+### Validação
+
+```text
+Validacao
+```
+
+### Conformidade
+
+```text
+RequisitoDocumental
+AtividadeRequisito
+RequisitoDocumento
+```
+
+### Monitoramento
+
+```text
+Alerta
+Auditoria
+```
+
+---
+
+# 20. Avaliação técnica do modelo
+
+Neste ponto, o sistema possui uma estrutura adequada para um MVP SaaS.
+
+Mas quero destacar uma decisão importante antes de avançarmos.
+
+## Não devemos criar todas essas entidades imediatamente no MVP
+
+O erro seria tentar desenvolver:
+
+```text
+22 tabelas
++
+todos os módulos
++
+motor de conformidade
++
+alertas
++
+auditoria
+```
+
+simultaneamente.
+
+A estratégia correta será implementar por camadas.
+
+### MVP — Núcleo inicial
+
+```text
+Usuário
+
+Perfil
+
+Empresa
+
+Unidade
+
+Tipo Serviço
+
+Prestação Serviço
+
+Trabalhador
+
+Tipo Documento
+
+Documento Empresa
+
+Documento Trabalhador
+
+Validação
+```
+
+### Versão 1.1
+
+```text
+Atividade
+
+Prestação Atividade
+
+Alocação Trabalhador
+
+Alertas
+
+Atualização Quadro
+```
+
+### Versão 2.0
+
+```text
+Requisito Documental
+
+Atividade Requisito
+
+Requisito Documento
+
+Motor de Conformidade
+```
+
+Essa abordagem é importante porque você ainda está desenvolvendo o primeiro produto sem clientes ativos. Portanto, precisamos construir uma **fundação sólida, mas sem superengenharia**.
+
+---
+
+# DECISÃO DA FASE 7
+
+O DER conceitual está definido.
+
+A próxima sequência técnica recomendada é:
+
+```text
+FASE 8
+↓
+MODELO LÓGICO DO BANCO
+
+FASE 9
+↓
+MODELO FÍSICO POSTGRESQL
+
+FASE 10
+↓
+ESTRUTURA DO PROJETO DJANGO
+
+FASE 11
+↓
+DJANGO MODELS
+
+FASE 12
+↓
+MIGRATIONS
+
+FASE 13
+↓
+INTERFACE WEB
+```
+
+## Minha recomendação
+
+Na próxima etapa, devemos fazer a **FASE 8 — Modelo Lógico do Banco de Dados**, detalhando tabela por tabela:
+
+* nome;
+* finalidade;
+* campos;
+* tipos de dados conceituais;
+* chave primária;
+* chaves estrangeiras;
+* obrigatoriedade;
+* constraints;
+* índices;
+* cardinalidades.
+
+Isso nos permitirá validar o banco completamente antes de escrever qualquer SQL ou código Django.
