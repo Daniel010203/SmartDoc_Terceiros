@@ -1,0 +1,1062 @@
+Vamos retomar exatamente do ponto em que paramos.
+
+# FASE 4 — REQUISITOS NÃO FUNCIONAIS E REGRAS DE NEGÓCIO
+
+## SmartDoc Terceiros
+
+Esta fase é crítica porque define **como o sistema deve operar**, além de estabelecer as regras que posteriormente serão implementadas no Django, PostgreSQL e nas camadas de negócio.
+
+Vou separar em duas partes:
+
+1. **Requisitos Não Funcionais (RNF)** — qualidade, segurança e características técnicas;
+2. **Regras de Negócio (RN)** — comportamento obrigatório do domínio.
+
+---
+
+# PARTE A — REQUISITOS NÃO FUNCIONAIS
+
+## RNF-001 — Arquitetura Web
+
+O sistema deverá ser desenvolvido como uma aplicação Web SaaS, acessível através de navegadores modernos.
+
+Tecnologias iniciais:
+
+* Python;
+* Django;
+* PostgreSQL;
+* HTML;
+* Bootstrap;
+* Django Templates.
+
+---
+
+## RNF-002 — Arquitetura Modular
+
+O sistema deverá utilizar arquitetura de **Monólito Modular**, separando os principais domínios de negócio.
+
+Estrutura conceitual:
+
+```text
+SmartDoc Terceiros
+│
+├── Usuários
+├── Empresas
+├── Serviços
+├── Atividades
+├── Trabalhadores
+├── Documentos
+├── Validações
+├── Alertas
+├── Auditoria
+└── Relatórios
+```
+
+O objetivo é manter baixo acoplamento entre módulos, sem introduzir prematuramente a complexidade de microserviços.
+
+---
+
+## RNF-003 — Banco de Dados
+
+O sistema deverá utilizar banco de dados relacional.
+
+Tecnologia definida:
+
+```text
+PostgreSQL
+```
+
+O banco deverá garantir:
+
+* integridade referencial;
+* constraints;
+* chaves estrangeiras;
+* unicidade de registros quando aplicável;
+* consistência transacional.
+
+---
+
+## RNF-004 — Autenticação
+
+O acesso ao sistema deverá exigir autenticação.
+
+O sistema deverá:
+
+* armazenar senhas utilizando hash seguro;
+* impedir acesso de usuários inativos;
+* controlar sessões;
+* permitir recuperação de senha;
+* permitir alteração de senha.
+
+Será utilizada inicialmente a estrutura nativa do:
+
+```text
+Django Authentication System
+```
+
+---
+
+## RNF-005 — Controle de Autorização
+
+O sistema deverá implementar controle de acesso baseado em papéis.
+
+Modelo inicial:
+
+```text
+RBAC
+Role-Based Access Control
+```
+
+Perfis:
+
+```text
+USUARIO_COMUM
+
+GESTOR
+
+ADMINISTRADOR
+```
+
+Cada usuário deverá possuir acesso somente às funcionalidades permitidas pelo seu perfil.
+
+---
+
+# SEGURANÇA DA INFORMAÇÃO
+
+Este tópico será especialmente importante porque o sistema armazenará documentos empresariais e documentos relacionados a trabalhadores.
+
+---
+
+## RNF-006 — Armazenamento Privado de Documentos
+
+Os arquivos enviados não deverão ficar disponíveis diretamente através de URLs públicas.
+
+Fluxo:
+
+```text
+USUÁRIO
+   │
+   ▼
+SOLICITA DOCUMENTO
+   │
+   ▼
+SISTEMA VERIFICA
+AUTENTICAÇÃO
+   │
+   ▼
+SISTEMA VERIFICA
+PERMISSÃO
+   │
+   ├── NÃO AUTORIZADO
+   │        │
+   │        ▼
+   │      BLOQUEIO
+   │
+   └── AUTORIZADO
+            │
+            ▼
+     LIBERA ACESSO
+```
+
+---
+
+## RNF-007 — Restrição de Upload
+
+Inicialmente, o sistema deverá aceitar exclusivamente:
+
+```text
+PDF
+```
+
+O sistema deverá validar:
+
+* extensão;
+* MIME Type;
+* tamanho máximo;
+* integridade básica do arquivo.
+
+---
+
+## RNF-008 — Integridade de Arquivos
+
+Para cada documento enviado, o sistema deverá registrar informações para rastreabilidade.
+
+Exemplo:
+
+```text
+Nome original
+
+Nome interno
+
+Tipo MIME
+
+Tamanho
+
+Hash do arquivo
+
+Data de upload
+
+Usuário responsável
+```
+
+Recomenda-se inicialmente o uso de:
+
+```text
+SHA-256
+```
+
+para identificação de integridade e possível detecção de duplicidade.
+
+---
+
+## RNF-009 — Proteção contra Exclusão Indevida
+
+Documentos e registros críticos não deverão ser excluídos fisicamente de forma indiscriminada.
+
+O sistema deverá priorizar:
+
+```text
+EXCLUSÃO LÓGICA
+```
+
+Exemplo:
+
+```text
+ativo = False
+```
+
+ou:
+
+```text
+status = INATIVO
+```
+
+O histórico deverá ser preservado.
+
+---
+
+# PRIVACIDADE E PROTEÇÃO DE DADOS
+
+## RNF-010 — Proteção de Dados
+
+O sistema deverá implementar controles compatíveis com boas práticas de proteção de dados pessoais.
+
+Como o sistema poderá armazenar:
+
+* nome;
+* CPF;
+* informações profissionais;
+* documentos ocupacionais;
+
+deverá existir controle de:
+
+* acesso;
+* visualização;
+* auditoria;
+* retenção.
+
+> Importante: o sistema deverá ser projetado para apoiar conformidade com a LGPD, mas a definição jurídica completa de bases legais, retenção e responsabilidades deverá ser validada posteriormente com especialistas jurídicos e de privacidade.
+
+---
+
+## RNF-011 — Minimização de Dados
+
+O sistema deverá armazenar apenas os dados necessários para a finalidade de gestão documental e conformidade.
+
+Isso significa evitar o cadastro de informações que não sejam necessárias para:
+
+* identificação;
+* vínculo profissional;
+* validação documental;
+* rastreabilidade.
+
+---
+
+# RASTREABILIDADE
+
+## RNF-012 — Registro de Auditoria
+
+Ações críticas deverão gerar registros de auditoria.
+
+Exemplos:
+
+```text
+LOGIN
+
+UPLOAD_DOCUMENTO
+
+ALTERAÇÃO_DOCUMENTO
+
+SOLICITAÇÃO_VALIDAÇÃO
+
+APROVAÇÃO
+
+REPROVAÇÃO
+
+ALTERAÇÃO_USUÁRIO
+
+INATIVAÇÃO
+```
+
+Cada evento deverá registrar:
+
+* usuário;
+* data;
+* horário;
+* ação;
+* entidade;
+* identificador do registro.
+
+---
+
+## RNF-013 — Histórico Documental
+
+O sistema deverá preservar versões anteriores dos documentos.
+
+Exemplo:
+
+```text
+ASO
+
+Versão 1
+Status: Vencido
+
+Versão 2
+Status: Reprovado
+
+Versão 3
+Status: Aprovado
+```
+
+A versão anterior não deverá ser sobrescrita.
+
+---
+
+# DESEMPENHO
+
+## RNF-014 — Tempo de Resposta
+
+As operações comuns deverão apresentar resposta adequada para uma aplicação corporativa.
+
+Exemplos:
+
+* login;
+* consulta;
+* cadastro;
+* filtros;
+* dashboards.
+
+Operações pesadas, como geração futura de relatórios complexos, poderão ser processadas de forma assíncrona.
+
+---
+
+## RNF-015 — Escalabilidade Gradual
+
+A arquitetura inicial deverá permitir evolução progressiva.
+
+MVP:
+
+```text
+Django
++
+PostgreSQL
++
+Storage Local Privado
+```
+
+Evolução:
+
+```text
+Django
++
+PostgreSQL
++
+Redis
++
+Celery
++
+Object Storage
+```
+
+A decisão evita complexidade prematura.
+
+---
+
+# DISPONIBILIDADE E CONFIABILIDADE
+
+## RNF-016 — Backup
+
+O ambiente de produção deverá possuir estratégia de backup para:
+
+* banco de dados;
+* documentos.
+
+A política específica será definida durante a etapa de infraestrutura.
+
+---
+
+## RNF-017 — Recuperação
+
+O sistema deverá permitir recuperação dos dados em caso de falhas de infraestrutura.
+
+Serão considerados posteriormente:
+
+* backup;
+* restore;
+* versionamento;
+* logs.
+
+---
+
+# USABILIDADE
+
+## RNF-018 — Interface Responsiva
+
+O sistema deverá funcionar adequadamente em:
+
+* computadores;
+* notebooks;
+* tablets.
+
+A prioridade inicial será desktop, considerando o perfil corporativo e a grande quantidade de documentos manipulados.
+
+---
+
+## RNF-019 — Facilidade de Operação
+
+O sistema deverá apresentar:
+
+* menus claros;
+* indicadores visuais;
+* status compreensíveis;
+* mensagens de erro;
+* alertas;
+* filtros.
+
+O objetivo é reduzir a dependência de treinamento.
+
+---
+
+# MANUTENIBILIDADE
+
+## RNF-020 — Código Organizado
+
+O código deverá seguir boas práticas de engenharia.
+
+Princípios:
+
+* separação de responsabilidades;
+* baixo acoplamento;
+* reutilização;
+* modularização;
+* legibilidade.
+
+---
+
+## RNF-021 — Controle de Versão
+
+O projeto deverá utilizar:
+
+```text
+Git
++
+GitHub
+```
+
+O desenvolvimento deverá ser organizado progressivamente por versões.
+
+Exemplo:
+
+```text
+v0.1 — Fundação
+
+v0.2 — Usuários
+
+v0.3 — Empresas
+
+v0.4 — Serviços
+
+v0.5 — Trabalhadores
+
+v1.0 — MVP
+```
+
+---
+
+# TESTABILIDADE
+
+## RNF-022 — Testes
+
+As regras críticas deverão possuir testes automatizados.
+
+Prioridade:
+
+* regras de validade;
+* regras de status;
+* permissões;
+* validações;
+* cálculo de vencimentos.
+
+O Django Test Framework será suficiente inicialmente.
+
+---
+
+# PARTE B — REGRAS DE NEGÓCIO
+
+Agora entramos no núcleo do sistema.
+
+---
+
+# RN-001 — Exclusividade do CNPJ
+
+Uma empresa deverá possuir CNPJ único dentro do contexto apropriado da plataforma.
+
+O sistema não deverá permitir duplicidade cadastral indevida.
+
+---
+
+# RN-002 — Exclusividade do CPF
+
+Um trabalhador deverá possuir CPF único.
+
+O sistema deverá impedir cadastros duplicados.
+
+---
+
+# RN-003 — Vínculo de Trabalhador
+
+Todo trabalhador deverá estar vinculado a uma empresa terceirizada.
+
+Estrutura:
+
+```text
+EMPRESA TERCEIRIZADA
+        │
+        ▼
+TRABALHADOR
+```
+
+Não deverá existir trabalhador sem empresa vinculada.
+
+---
+
+# RN-004 — Vínculo de Serviço
+
+Todo serviço deverá possuir obrigatoriamente:
+
+* empresa cliente;
+* empresa terceirizada;
+* tipo de serviço;
+* data de início.
+
+---
+
+# RN-005 — Prazo Determinado
+
+Quando o serviço possuir prazo determinado, deverá ser obrigatória a informação:
+
+```text
+Data prevista de término
+```
+
+A data final não poderá ser anterior à data de início.
+
+---
+
+# RN-006 — Prazo Indeterminado
+
+Quando o serviço possuir prazo indeterminado, será obrigatória uma justificativa.
+
+Exemplo:
+
+```text
+Contrato contínuo de manutenção.
+```
+
+---
+
+# RN-007 — Documentação Obrigatória
+
+O sistema deverá permitir configurar documentos obrigatórios.
+
+Um documento poderá ser obrigatório conforme:
+
+* empresa;
+* serviço;
+* atividade;
+* função;
+* trabalhador.
+
+Isso será essencial para o motor futuro de conformidade.
+
+---
+
+# RN-008 — Documento com Validade
+
+Quando um tipo documental for configurado como possuidor de validade, o sistema deverá exigir:
+
+```text
+Data de início
+
+Data de validade
+```
+
+---
+
+# RN-009 — Validade
+
+A data de validade deverá ser posterior à data de início.
+
+Caso contrário:
+
+```text
+VALIDAÇÃO REJEITADA
+```
+
+---
+
+# RN-010 — Documento Vencido
+
+Um documento deverá ser considerado vencido quando:
+
+```text
+Data atual > Data validade
+```
+
+---
+
+# RN-011 — Documento Próximo do Vencimento
+
+O sistema deverá classificar documentos conforme proximidade do vencimento.
+
+Configuração inicial:
+
+```text
+30 dias
+
+15 dias
+
+7 dias
+```
+
+Esses parâmetros deverão futuramente ser configuráveis.
+
+---
+
+# RN-012 — Documento sem Validade
+
+Documentos configurados como permanentes ou sem prazo de validade não deverão exigir data de validade.
+
+Exemplo conceitual:
+
+```text
+Contrato Social
+```
+
+---
+
+# RN-013 — Formato Documental
+
+No MVP, documentos deverão ser enviados exclusivamente em:
+
+```text
+PDF
+```
+
+---
+
+# RN-014 — Status Inicial
+
+Todo documento enviado deverá receber inicialmente o status:
+
+```text
+PENDENTE
+```
+
+Posteriormente poderá ser:
+
+```text
+EM_ANALISE
+
+APROVADO
+
+REPROVADO
+
+VENCIDO
+
+SUBSTITUIDO
+```
+
+---
+
+# RN-015 — Aprovação
+
+Somente usuários autorizados poderão aprovar documentos.
+
+Perfis:
+
+```text
+GESTOR
+
+ADMINISTRADOR
+```
+
+---
+
+# RN-016 — Autovalidação Proibida
+
+O usuário que enviou um documento não poderá aprovar ou validar o próprio documento.
+
+Essa regra reduz conflito de interesse.
+
+---
+
+# RN-017 — Reprovação
+
+Todo documento reprovado deverá possuir justificativa.
+
+Estrutura:
+
+```text
+Status: REPROVADO
+
+Motivo: obrigatório
+```
+
+---
+
+# RN-018 — Histórico
+
+A alteração ou substituição de documentos não deverá apagar registros anteriores.
+
+O sistema deverá manter histórico.
+
+---
+
+# RN-019 — Atualização do Quadro
+
+A empresa terceirizada deverá confirmar ou atualizar o quadro de trabalhadores periodicamente.
+
+Periodicidade inicial:
+
+```text
+15 DIAS
+```
+
+---
+
+# RN-020 — Atualização Pendente
+
+Caso a empresa não realize a confirmação do quadro dentro do prazo estabelecido, o sistema deverá gerar status:
+
+```text
+ATUALIZAÇÃO PENDENTE
+```
+
+O Gestor deverá visualizar essa situação.
+
+---
+
+# RN-021 — Trabalhador Inativo
+
+Trabalhadores que não fazem mais parte da empresa não deverão ser excluídos fisicamente.
+
+Deverão receber status:
+
+```text
+INATIVO
+```
+
+O histórico documental deverá ser preservado.
+
+---
+
+# RN-022 — Solicitação de Validação
+
+A solicitação de validação somente poderá ocorrer quando existir documentação mínima enviada.
+
+Essa regra será detalhada posteriormente na matriz de requisitos.
+
+---
+
+# RN-023 — Status do Trabalhador
+
+O status geral do trabalhador deverá ser calculado considerando sua situação documental.
+
+Modelo inicial:
+
+```text
+REGULAR
+
+PENDENTE
+
+IRREGULAR
+```
+
+Lógica inicial:
+
+```text
+REGULAR
+↓
+Todos documentos obrigatórios válidos
+
+PENDENTE
+↓
+Documentos aguardando análise
+OU
+Documentos próximos do vencimento
+
+IRREGULAR
+↓
+Documento obrigatório vencido
+OU
+Documento obrigatório reprovado
+OU
+Documento obrigatório ausente
+```
+
+---
+
+# RN-024 — Status da Empresa
+
+A empresa terceirizada deverá possuir um status geral de conformidade.
+
+Exemplo:
+
+```text
+REGULAR
+
+PENDENTE
+
+IRREGULAR
+
+INATIVA
+```
+
+O status poderá ser calculado considerando:
+
+* documentos empresariais;
+* PGR;
+* PCMSO;
+* atualização do quadro;
+* situação dos trabalhadores.
+
+---
+
+# RN-025 — Versionamento
+
+Quando um novo documento substituir outro, o documento anterior deverá permanecer no histórico.
+
+Exemplo:
+
+```text
+ASO
+
+Versão 1
+01/01/2025 → 01/01/2026
+
+Versão 2
+01/01/2026 → 01/01/2027
+```
+
+---
+
+# RN-026 — Integridade da Validação
+
+Uma aprovação deverá registrar:
+
+```text
+Quem aprovou
+
+Quando aprovou
+
+Qual documento
+
+Resultado
+
+Observação
+```
+
+O mesmo deverá ocorrer para reprovação.
+
+---
+
+# RN-027 — PGR e PCMSO
+
+O sistema deverá permitir armazenar PGR e PCMSO como documentos oficiais em PDF.
+
+No MVP:
+
+```text
+PGR
+     ↓
+PDF armazenado
+     ↓
+Consulta humana
+```
+
+```text
+PCMSO
+     ↓
+PDF armazenado
+     ↓
+Consulta humana
+```
+
+A interpretação automática do conteúdo não será obrigatória inicialmente.
+
+---
+
+# RN-028 — Matriz de Requisitos
+
+O sistema deverá possuir estrutura para futuramente relacionar:
+
+```text
+SERVIÇO
+   ↓
+ATIVIDADE
+   ↓
+FUNÇÃO
+   ↓
+RISCO
+   ↓
+REQUISITO
+   ↓
+DOCUMENTO
+```
+
+Essa regra será um dos principais diferenciais futuros do produto.
+
+---
+
+# RN-029 — Alertas
+
+Alertas não deverão alterar diretamente um documento.
+
+Exemplo:
+
+```text
+Documento válido
+       │
+       ▼
+Faltam 30 dias
+       │
+       ▼
+GERA ALERTA
+```
+
+O alerta é um evento informativo.
+
+O status documental permanece válido até a expiração, conforme a regra definida.
+
+---
+
+# RN-030 — Exclusão Lógica
+
+Registros críticos deverão utilizar exclusão lógica sempre que possível.
+
+Exemplos:
+
+```text
+Usuário
+
+Empresa
+
+Trabalhador
+
+Documento
+```
+
+A exclusão física deverá ser restrita a processos administrativos controlados.
+
+---
+
+# CONSOLIDAÇÃO DA FASE 4
+
+Agora temos:
+
+### 22 Requisitos Não Funcionais
+
+```text
+RNF-001 até RNF-022
+```
+
+### 30 Regras de Negócio
+
+```text
+RN-001 até RN-030
+```
+
+Isso começa a formar a base formal da engenharia do sistema.
+
+---
+
+# Uma observação arquitetural importante
+
+Após consolidar os requisitos, surge um conceito que considero central para o **SmartDoc Terceiros**:
+
+## Motor de Conformidade Documental
+
+Não devemos pensar apenas em:
+
+```text
+Upload de Documento
+```
+
+O núcleo futuro deverá funcionar assim:
+
+```text
+┌───────────────────┐
+│ EMPRESA TERCEIRA  │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│     SERVIÇO       │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│    ATIVIDADES     │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│       RISCOS      │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│    REQUISITOS     │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ DOCUMENTOS EXIGIDOS│
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│   VALIDAÇÃO       │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│   CONFORMIDADE    │
+└───────────────────┘
+```
+
+Esse conceito deverá orientar nossa próxima etapa.
+
+# Próxima Fase — FASE 5: Modelagem do Domínio
+
+Antes de criar tabelas no PostgreSQL, vamos identificar formalmente:
+
+* entidades;
+* agregados principais;
+* relacionamentos;
+* responsabilidades;
+* ciclo de vida dos documentos;
+* status;
+* regras entre os domínios.
+
+A **FASE 5 — Modelagem do Domínio** será o ponto de transição entre Engenharia de Requisitos e Arquitetura/Modelagem do Banco de Dados.
