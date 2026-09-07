@@ -1,0 +1,1089 @@
+Perfeito. Vamos para a **FASE 8 — Modelo Lógico do Banco de Dados**.
+
+Aqui transformaremos o DER conceitual em uma especificação técnica que servirá diretamente para:
+
+* PostgreSQL;
+* Django ORM;
+* migrations;
+* APIs futuras;
+* regras de integridade;
+* evolução do SaaS.
+
+Ainda **não vamos escrever SQL**. Primeiro consolidaremos a estrutura.
+
+---
+
+# FASE 8 — MODELO LÓGICO DO BANCO DE DADOS
+
+## SmartDoc Terceiros
+
+# 1. Estratégia de modelagem
+
+Vamos adotar algumas convenções desde o início.
+
+### Chaves primárias
+
+```text
+id → UUID
+```
+
+Minha recomendação para um SaaS é utilizar UUID em vez de IDs sequenciais.
+
+Exemplo:
+
+```text
+550e8400-e29b-41d4-a716-446655440000
+```
+
+Vantagens:
+
+* melhor isolamento entre dados;
+* URLs menos previsíveis;
+* facilita futuras integrações;
+* melhor preparação para arquitetura SaaS.
+
+---
+
+### Campos de auditoria padrão
+
+A maioria das tabelas principais possuirá:
+
+```text
+criado_em
+atualizado_em
+ativo
+```
+
+---
+
+### Exclusão lógica
+
+Evitar inicialmente apagar informações importantes.
+
+Utilizaremos:
+
+```text
+ativo = true
+```
+
+ou status equivalente.
+
+Isso é particularmente importante para:
+
+* trabalhadores;
+* empresas;
+* documentos;
+* prestações de serviço.
+
+---
+
+# 2. Tabela PERFIS
+
+## Finalidade
+
+Armazenar os perfis de acesso do sistema.
+
+### Estrutura
+
+| Campo     | Tipo         | Obrigatório | Regra         |
+| --------- | ------------ | ----------- | ------------- |
+| id        | UUID         | Sim         | PK            |
+| nome      | VARCHAR(50)  | Sim         | UNIQUE        |
+| descricao | VARCHAR(255) | Não         | —             |
+| ativo     | BOOLEAN      | Sim         | DEFAULT TRUE  |
+| criado_em | TIMESTAMP    | Sim         | DEFAULT NOW() |
+
+### Valores iniciais
+
+```text
+ADMINISTRADOR
+
+GESTOR
+
+USUARIO_COMUM
+```
+
+### Constraint
+
+```text
+UNIQUE(nome)
+```
+
+---
+
+# 3. Tabela EMPRESAS
+
+## Finalidade
+
+Armazenar tanto empresas clientes quanto empresas terceirizadas.
+
+### Estrutura
+
+| Campo               | Tipo         | Obrigatório | Regra                  |
+| ------------------- | ------------ | ----------- | ---------------------- |
+| id                  | UUID         | Sim         | PK                     |
+| razao_social        | VARCHAR(255) | Sim         | —                      |
+| nome_fantasia       | VARCHAR(255) | Não         | —                      |
+| cnpj                | VARCHAR(14)  | Sim         | UNIQUE                 |
+| inscricao_estadual  | VARCHAR(30)  | Não         | —                      |
+| inscricao_municipal | VARCHAR(30)  | Não         | —                      |
+| email               | VARCHAR(150) | Não         | —                      |
+| telefone            | VARCHAR(30)  | Não         | —                      |
+| tipo                | VARCHAR(30)  | Sim         | CLIENTE / TERCEIRIZADA |
+| status              | VARCHAR(30)  | Sim         | DEFAULT ATIVA          |
+| ativo               | BOOLEAN      | Sim         | DEFAULT TRUE           |
+| criado_em           | TIMESTAMP    | Sim         | DEFAULT NOW()          |
+| atualizado_em       | TIMESTAMP    | Sim         | —                      |
+
+### Constraint importante
+
+```text
+UNIQUE(cnpj)
+```
+
+### Status sugeridos
+
+```text
+ATIVA
+
+INATIVA
+
+SUSPENSA
+
+PENDENTE
+```
+
+---
+
+# 4. Tabela USUARIOS
+
+No Django, esta tabela será baseada no sistema de autenticação.
+
+Minha recomendação é utilizar:
+
+```text
+AbstractUser
+```
+
+e criar um modelo customizado.
+
+## Estrutura conceitual
+
+| Campo         | Tipo         | Obrigatório |
+| ------------- | ------------ | ----------- |
+| id            | UUID         | Sim         |
+| nome          | VARCHAR(150) | Sim         |
+| email         | VARCHAR(150) | Sim         |
+| password      | HASH         | Sim         |
+| perfil_id     | UUID         | Sim         |
+| empresa_id    | UUID         | Não         |
+| is_active     | BOOLEAN      | Sim         |
+| ultimo_acesso | TIMESTAMP    | Não         |
+| criado_em     | TIMESTAMP    | Sim         |
+| atualizado_em | TIMESTAMP    | Sim         |
+
+Relacionamentos:
+
+```text
+PERFIL
+   │
+   │ 1:N
+   ▼
+USUARIO
+```
+
+```text
+EMPRESA
+   │
+   │ 1:N
+   ▼
+USUARIO
+```
+
+### Índices
+
+```text
+INDEX(email)
+
+INDEX(empresa_id)
+```
+
+---
+
+# 5. Tabela UNIDADES
+
+## Finalidade
+
+Representar instalações físicas da empresa cliente.
+
+| Campo         | Tipo         |
+| ------------- | ------------ |
+| id            | UUID         |
+| empresa_id    | UUID FK      |
+| nome          | VARCHAR(150) |
+| tipo          | VARCHAR(50)  |
+| logradouro    | VARCHAR(255) |
+| numero        | VARCHAR(20)  |
+| complemento   | VARCHAR(100) |
+| bairro        | VARCHAR(100) |
+| cidade        | VARCHAR(100) |
+| estado        | CHAR(2)      |
+| cep           | VARCHAR(8)   |
+| ativo         | BOOLEAN      |
+| criado_em     | TIMESTAMP    |
+| atualizado_em | TIMESTAMP    |
+
+Relacionamento:
+
+```text
+EMPRESA 1 ───── N UNIDADE
+```
+
+### Constraint recomendada
+
+```text
+UNIQUE(empresa_id, nome)
+```
+
+---
+
+# 6. Tabela TIPOS_SERVICOS
+
+## Finalidade
+
+Catálogo geral de serviços.
+
+| Campo         | Tipo         |
+| ------------- | ------------ |
+| id            | UUID         |
+| nome          | VARCHAR(150) |
+| descricao     | TEXT         |
+| ativo         | BOOLEAN      |
+| criado_em     | TIMESTAMP    |
+| atualizado_em | TIMESTAMP    |
+
+Exemplos iniciais:
+
+1. Construção Civil
+2. Manutenção Industrial
+3. Limpeza de Cisterna
+4. Serviços de Tecnologia da Informação
+5. Serviços Elétricos
+6. Serviços Hidráulicos
+7. Pintura Industrial
+8. Soldagem
+9. Jardinagem
+10. Limpeza Predial
+11. Segurança Patrimonial
+12. Transporte de Cargas
+13. Operação de Máquinas
+14. Montagem Industrial
+15. Manutenção Mecânica
+16. Instalação de Sistemas
+17. Telecomunicações
+18. Serviços de Engenharia
+19. Obras de Infraestrutura
+20. Serviços de Refrigeração
+21. Controle de Pragas
+22. Serviços de Alimentação
+23. Coleta de Resíduos
+24. Serviços de Laboratório
+25. Manutenção de Equipamentos
+
+---
+
+# 7. Tabela PRESTACOES_SERVICOS
+
+Esta será uma das tabelas centrais.
+
+## Finalidade
+
+Representar o contrato operacional entre cliente e empresa terceirizada.
+
+| Campo                             | Tipo        |
+| --------------------------------- | ----------- |
+| id                                | UUID        |
+| empresa_cliente_id                | UUID FK     |
+| empresa_terceirizada_id           | UUID FK     |
+| unidade_id                        | UUID FK     |
+| tipo_servico_id                   | UUID FK     |
+| descricao                         | TEXT        |
+| data_inicio                       | DATE        |
+| tipo_prazo                        | VARCHAR(30) |
+| data_prevista_termino             | DATE        |
+| justificativa_prazo_indeterminado | TEXT        |
+| status                            | VARCHAR(30) |
+| ativo                             | BOOLEAN     |
+| criado_em                         | TIMESTAMP   |
+| atualizado_em                     | TIMESTAMP   |
+
+### Tipo de prazo
+
+```text
+DETERMINADO
+
+INDETERMINADO
+```
+
+### Constraint lógica
+
+```text
+SE tipo_prazo = DETERMINADO
+
+ENTÃO
+
+data_prevista_termino IS NOT NULL
+```
+
+E:
+
+```text
+SE tipo_prazo = INDETERMINADO
+
+ENTÃO
+
+justificativa_prazo_indeterminado IS NOT NULL
+```
+
+Essa regra deverá existir tanto no Django quanto, preferencialmente, como `CHECK CONSTRAINT` no PostgreSQL.
+
+---
+
+# 8. Tabela ATIVIDADES
+
+## Finalidade
+
+Catálogo de atividades executadas.
+
+| Campo         | Tipo         |
+| ------------- | ------------ |
+| id            | UUID         |
+| nome          | VARCHAR(150) |
+| descricao     | TEXT         |
+| ativo         | BOOLEAN      |
+| criado_em     | TIMESTAMP    |
+| atualizado_em | TIMESTAMP    |
+
+Exemplos:
+
+```text
+Trabalho em altura
+
+Espaço confinado
+
+Soldagem
+
+Escavação
+
+Serviços elétricos
+
+Operação de máquinas
+
+Movimentação de cargas
+```
+
+---
+
+# 9. Tabela PRESTACOES_ATIVIDADES
+
+Tabela associativa.
+
+```text
+PRESTACAO_SERVICO
+        │
+        │
+        N
+        │
+PRESTACAO_ATIVIDADE
+        │
+        N
+        │
+        ▼
+    ATIVIDADE
+```
+
+| Campo                | Tipo      |
+| -------------------- | --------- |
+| id                   | UUID      |
+| prestacao_servico_id | UUID FK   |
+| atividade_id         | UUID FK   |
+| observacao           | TEXT      |
+| ativo                | BOOLEAN   |
+| criado_em            | TIMESTAMP |
+
+### Constraint
+
+```text
+UNIQUE(prestacao_servico_id, atividade_id)
+```
+
+---
+
+# 10. Tabela TRABALHADORES
+
+## Finalidade
+
+Armazenar trabalhadores vinculados às empresas terceirizadas.
+
+| Campo         | Tipo         |
+| ------------- | ------------ |
+| id            | UUID         |
+| empresa_id    | UUID FK      |
+| nome          | VARCHAR(255) |
+| cpf           | VARCHAR(11)  |
+| matricula     | VARCHAR(50)  |
+| funcao        | VARCHAR(150) |
+| data_admissao | DATE         |
+| status        | VARCHAR(30)  |
+| ativo         | BOOLEAN      |
+| criado_em     | TIMESTAMP    |
+| atualizado_em | TIMESTAMP    |
+
+### Constraint importante
+
+Eu recomendo:
+
+```text
+UNIQUE(empresa_id, cpf)
+```
+
+Isso permite o histórico de vínculo empresarial sem assumir que um CPF nunca possa aparecer em outro contexto.
+
+---
+
+# 11. Tabela ALOCACOES_TRABALHADORES
+
+Relaciona trabalhador com prestação de serviço.
+
+| Campo                | Tipo        |
+| -------------------- | ----------- |
+| id                   | UUID        |
+| trabalhador_id       | UUID FK     |
+| prestacao_servico_id | UUID FK     |
+| data_inicio          | DATE        |
+| data_fim             | DATE        |
+| status               | VARCHAR(30) |
+| ativo                | BOOLEAN     |
+| criado_em            | TIMESTAMP   |
+| atualizado_em        | TIMESTAMP   |
+
+### Status
+
+```text
+ATIVO
+
+ENCERRADO
+
+SUSPENSO
+```
+
+Relacionamento:
+
+```text
+TRABALHADOR N ───── N PRESTACAO_SERVICO
+```
+
+---
+
+# 12. Tabela ALOCACOES_ATIVIDADES
+
+Relaciona um trabalhador às atividades específicas.
+
+| Campo                   | Tipo      |
+| ----------------------- | --------- |
+| id                      | UUID      |
+| alocacao_trabalhador_id | UUID FK   |
+| prestacao_atividade_id  | UUID FK   |
+| ativo                   | BOOLEAN   |
+| criado_em               | TIMESTAMP |
+
+### Constraint
+
+```text
+UNIQUE(
+    alocacao_trabalhador_id,
+    prestacao_atividade_id
+)
+```
+
+---
+
+# 13. Tabela TIPOS_DOCUMENTOS
+
+Esta será uma tabela estratégica.
+
+## Estrutura
+
+| Campo               | Tipo         |
+| ------------------- | ------------ |
+| id                  | UUID         |
+| nome                | VARCHAR(150) |
+| categoria           | VARCHAR(50)  |
+| descricao           | TEXT         |
+| possui_validade     | BOOLEAN      |
+| exige_data_inicio   | BOOLEAN      |
+| exige_data_validade | BOOLEAN      |
+| ativo               | BOOLEAN      |
+| criado_em           | TIMESTAMP    |
+| atualizado_em       | TIMESTAMP    |
+
+### Categorias
+
+```text
+EMPRESARIAL
+
+TRABALHISTA
+
+SST
+
+SAUDE_OCUPACIONAL
+
+TREINAMENTO
+
+FISCAL
+
+TECNICO
+
+OUTROS
+```
+
+---
+
+# 14. Tabela DOCUMENTOS_EMPRESAS
+
+## Finalidade
+
+Armazenar metadados dos documentos empresariais.
+
+O arquivo físico **não ficará no banco**.
+
+No banco armazenaremos apenas:
+
+```text
+URL / CAMINHO
+
+METADADOS
+
+HASH
+```
+
+### Estrutura
+
+| Campo             | Tipo         |
+| ----------------- | ------------ |
+| id                | UUID         |
+| empresa_id        | UUID FK      |
+| tipo_documento_id | UUID FK      |
+| arquivo           | VARCHAR(500) |
+| nome_original     | VARCHAR(255) |
+| nome_armazenado   | VARCHAR(255) |
+| mime_type         | VARCHAR(100) |
+| tamanho           | BIGINT       |
+| hash_arquivo      | VARCHAR(128) |
+| data_inicio       | DATE         |
+| data_validade     | DATE         |
+| status            | VARCHAR(30)  |
+| versao            | INTEGER      |
+| enviado_por_id    | UUID FK      |
+| enviado_em        | TIMESTAMP    |
+| ativo             | BOOLEAN      |
+
+### Status
+
+```text
+ENVIADO
+
+PENDENTE
+
+EM_ANALISE
+
+APROVADO
+
+REPROVADO
+
+VENCIDO
+
+SUBSTITUIDO
+```
+
+---
+
+# 15. Tabela DOCUMENTOS_TRABALHADORES
+
+Estrutura semelhante, mas com vínculo ao trabalhador.
+
+| Campo             | Tipo         |
+| ----------------- | ------------ |
+| id                | UUID         |
+| trabalhador_id    | UUID FK      |
+| tipo_documento_id | UUID FK      |
+| arquivo           | VARCHAR(500) |
+| nome_original     | VARCHAR(255) |
+| nome_armazenado   | VARCHAR(255) |
+| mime_type         | VARCHAR(100) |
+| tamanho           | BIGINT       |
+| hash_arquivo      | VARCHAR(128) |
+| data_inicio       | DATE         |
+| data_validade     | DATE         |
+| status            | VARCHAR(30)  |
+| versao            | INTEGER      |
+| enviado_por_id    | UUID FK      |
+| enviado_em        | TIMESTAMP    |
+| ativo             | BOOLEAN      |
+
+---
+
+# 16. Estratégia de versionamento documental
+
+Esta parte merece atenção.
+
+Não devemos sobrescrever documentos.
+
+Exemplo:
+
+```text
+ASO V1
+│
+├── Reprovado
+│
+ASO V2
+│
+└── Aprovado
+```
+
+Para isso, futuramente podemos incluir:
+
+```text
+documento_pai_id
+```
+
+ou uma estrutura de grupos/versionamento.
+
+### Para o MVP
+
+Minha recomendação é simplificar:
+
+```text
+versao INTEGER
+```
+
+e:
+
+```text
+ativo BOOLEAN
+```
+
+Quando um novo documento for enviado:
+
+```text
+Versão anterior
+
+ativo = false
+
+Novo documento
+
+ativo = true
+versao = versao + 1
+```
+
+---
+
+# 17. Tabela VALIDACOES_DOCUMENTOS
+
+Aqui faremos um pequeno ajuste no modelo anterior.
+
+Para evitar relacionamento polimórfico, recomendo duas tabelas no banco físico:
+
+```text
+VALIDACOES_DOCUMENTOS_EMPRESAS
+
+VALIDACOES_DOCUMENTOS_TRABALHADORES
+```
+
+Isso simplifica integridade referencial.
+
+---
+
+## VALIDACOES_DOCUMENTOS_EMPRESAS
+
+| Campo                | Tipo        |
+| -------------------- | ----------- |
+| id                   | UUID        |
+| documento_empresa_id | UUID FK     |
+| validador_id         | UUID FK     |
+| status               | VARCHAR(30) |
+| observacao           | TEXT        |
+| tipo_validacao       | VARCHAR(30) |
+| data_validacao       | TIMESTAMP   |
+
+---
+
+## VALIDACOES_DOCUMENTOS_TRABALHADORES
+
+| Campo                    | Tipo        |
+| ------------------------ | ----------- |
+| id                       | UUID        |
+| documento_trabalhador_id | UUID FK     |
+| validador_id             | UUID FK     |
+| status                   | VARCHAR(30) |
+| observacao               | TEXT        |
+| tipo_validacao           | VARCHAR(30) |
+| data_validacao           | TIMESTAMP   |
+
+---
+
+# 18. Tabela REQUISITOS_DOCUMENTAIS
+
+Preparada para o motor de conformidade.
+
+| Campo         | Tipo         |
+| ------------- | ------------ |
+| id            | UUID         |
+| nome          | VARCHAR(150) |
+| descricao     | TEXT         |
+| obrigatorio   | BOOLEAN      |
+| ativo         | BOOLEAN      |
+| criado_em     | TIMESTAMP    |
+| atualizado_em | TIMESTAMP    |
+
+---
+
+# 19. Tabela ATIVIDADES_REQUISITOS
+
+```text
+ATIVIDADE
+
+       N
+       │
+       │
+ATIVIDADE_REQUISITO
+       │
+       │
+       N
+
+REQUISITO
+```
+
+| Campo        | Tipo    |
+| ------------ | ------- |
+| id           | UUID    |
+| atividade_id | UUID FK |
+| requisito_id | UUID FK |
+| obrigatorio  | BOOLEAN |
+| ativo        | BOOLEAN |
+
+### Constraint
+
+```text
+UNIQUE(atividade_id, requisito_id)
+```
+
+---
+
+# 20. Tabela REQUISITOS_DOCUMENTOS
+
+Relacionamento:
+
+```text
+REQUISITO
+      │
+      ▼
+TIPO_DOCUMENTO
+```
+
+| Campo             | Tipo    |
+| ----------------- | ------- |
+| id                | UUID    |
+| requisito_id      | UUID FK |
+| tipo_documento_id | UUID FK |
+| ativo             | BOOLEAN |
+
+### Constraint
+
+```text
+UNIQUE(requisito_id, tipo_documento_id)
+```
+
+---
+
+# 21. Tabela ATUALIZACOES_QUADRO
+
+Controle da atualização periódica dos trabalhadores.
+
+| Campo             | Tipo        |
+| ----------------- | ----------- |
+| id                | UUID        |
+| empresa_id        | UUID FK     |
+| data_solicitacao  | DATE        |
+| prazo_resposta    | DATE        |
+| data_confirmacao  | DATE        |
+| status            | VARCHAR(50) |
+| confirmado_por_id | UUID FK     |
+| observacao        | TEXT        |
+| criado_em         | TIMESTAMP   |
+
+### Status
+
+```text
+PENDENTE
+
+CONFIRMADO_SEM_ALTERACAO
+
+CONFIRMADO_COM_ALTERACAO
+
+ATRASADO
+```
+
+---
+
+# 22. Tabela ALERTAS
+
+| Campo           | Tipo         |
+| --------------- | ------------ |
+| id              | UUID         |
+| usuario_id      | UUID FK      |
+| tipo            | VARCHAR(50)  |
+| titulo          | VARCHAR(255) |
+| mensagem        | TEXT         |
+| referencia_tipo | VARCHAR(100) |
+| referencia_id   | UUID         |
+| status          | VARCHAR(30)  |
+| criado_em       | TIMESTAMP    |
+| enviado_em      | TIMESTAMP    |
+| lido_em         | TIMESTAMP    |
+
+### Tipos
+
+```text
+VENCIMENTO_30_DIAS
+
+VENCIMENTO_15_DIAS
+
+VENCIMENTO_7_DIAS
+
+DOCUMENTO_VENCIDO
+
+ATUALIZACAO_QUADRO
+```
+
+---
+
+# 23. Tabela AUDITORIAS
+
+Tabela importante para rastreabilidade.
+
+| Campo            | Tipo         |
+| ---------------- | ------------ |
+| id               | UUID         |
+| usuario_id       | UUID FK      |
+| acao             | VARCHAR(100) |
+| entidade         | VARCHAR(100) |
+| registro_id      | UUID         |
+| dados_anteriores | JSONB        |
+| dados_novos      | JSONB        |
+| ip               | VARCHAR(45)  |
+| data_hora        | TIMESTAMP    |
+
+A utilização de `JSONB` no PostgreSQL será particularmente interessante para auditoria.
+
+Exemplo:
+
+```json
+{
+    "status": "PENDENTE",
+    "data_validade": "2026-10-10"
+}
+```
+
+Depois:
+
+```json
+{
+    "status": "APROVADO",
+    "data_validade": "2026-10-10"
+}
+```
+
+---
+
+# 24. Resumo das tabelas
+
+Teremos inicialmente:
+
+| #  | Tabela                              | Módulo        |
+| -- | ----------------------------------- | ------------- |
+| 1  | perfis                              | Acesso        |
+| 2  | empresas                            | Organizações  |
+| 3  | usuarios                            | Acesso        |
+| 4  | unidades                            | Organizações  |
+| 5  | tipos_servicos                      | Serviços      |
+| 6  | prestacoes_servicos                 | Serviços      |
+| 7  | atividades                          | Serviços      |
+| 8  | prestacoes_atividades               | Serviços      |
+| 9  | trabalhadores                       | Trabalhadores |
+| 10 | alocacoes_trabalhadores             | Trabalhadores |
+| 11 | alocacoes_atividades                | Trabalhadores |
+| 12 | tipos_documentos                    | Documentos    |
+| 13 | documentos_empresas                 | Documentos    |
+| 14 | documentos_trabalhadores            | Documentos    |
+| 15 | validacoes_documentos_empresas      | Validação     |
+| 16 | validacoes_documentos_trabalhadores | Validação     |
+| 17 | requisitos_documentais              | Conformidade  |
+| 18 | atividades_requisitos               | Conformidade  |
+| 19 | requisitos_documentos               | Conformidade  |
+| 20 | atualizacoes_quadro                 | Monitoramento |
+| 21 | alertas                             | Monitoramento |
+| 22 | auditorias                          | Auditoria     |
+
+---
+
+# 25. Uma decisão importante antes do banco físico
+
+Embora tenhamos **22 tabelas conceituais**, não recomendo criar todas imediatamente.
+
+Para o primeiro ciclo funcional, proponho este núcleo:
+
+## Sprint inicial — Banco MVP
+
+```text
+usuarios
+empresas
+unidades
+
+tipos_servicos
+prestacoes_servicos
+
+trabalhadores
+
+tipos_documentos
+documentos_empresas
+documentos_trabalhadores
+
+validacoes_documentos_empresas
+validacoes_documentos_trabalhadores
+```
+
+Depois:
+
+### Sprint 2
+
+```text
+atividades
+prestacoes_atividades
+
+alocacoes_trabalhadores
+
+alertas
+atualizacoes_quadro
+```
+
+### Sprint 3
+
+```text
+requisitos_documentais
+atividades_requisitos
+requisitos_documentos
+```
+
+---
+
+# 26. Minha recomendação técnica: pequeno ajuste na arquitetura
+
+Antes de partirmos para PostgreSQL, proponho uma mudança arquitetural importante.
+
+Em vez de criar diretamente:
+
+```text
+DocumentoEmpresa
+DocumentoTrabalhador
+```
+
+duplicando praticamente todos os campos, poderíamos usar uma abstração Django:
+
+```text
+DocumentoBase
+```
+
+Exemplo conceitual:
+
+```text
+DOCUMENTO_BASE
+│
+├── tipo_documento
+├── arquivo
+├── hash
+├── data_inicio
+├── data_validade
+├── status
+├── versao
+└── enviado_por
+```
+
+E depois:
+
+```text
+DOCUMENTO_EMPRESA
+      │
+      └── empresa
+
+DOCUMENTO_TRABALHADOR
+      │
+      └── trabalhador
+```
+
+No Django, isso pode ser implementado com uma **classe abstrata**, evitando duplicação no código sem criar necessariamente uma tabela extra.
+
+Essa é a abordagem que considero mais profissional para este projeto.
+
+---
+
+# Resultado da FASE 8
+
+Agora temos:
+
+```text
+REQUISITOS
+     ↓
+MODELO CONCEITUAL
+     ↓
+DER
+     ↓
+MODELO LÓGICO
+     ↓
+BANCO FÍSICO
+```
+
+A base está suficientemente estruturada para iniciar a implementação.
+
+## Próxima fase recomendada
+
+# FASE 9 — MODELO FÍSICO
+
+Na próxima etapa, vamos tomar as decisões definitivas de implementação:
+
+1. Criar o banco `smartdoc_terceiros`;
+2. Definir o schema;
+3. Padronizar nomenclaturas;
+4. Definir UUID;
+5. Criar extensões necessárias;
+6. Definir ENUMs versus `TextChoices` do Django;
+7. Criar índices;
+8. Definir constraints;
+9. Preparar a estrutura para migrations do Django.
+
+**Minha recomendação é não escrever SQL manualmente para todas as tabelas.** Como escolhemos Django, o caminho profissional será definir corretamente os Models e deixar o Django gerar o schema através das migrations.
+
+Portanto, a próxima fase pode ser dividida em:
+
+```text
+FASE 9
+ARQUITETURA FÍSICA POSTGRESQL
+        ↓
+FASE 10
+ESTRUTURA DO PROJETO DJANGO
+        ↓
+FASE 11
+DJANGO MODELS + MIGRATIONS
+```
+
+Essa sequência evita retrabalho e mantém o banco totalmente alinhado ao código da aplicação.
